@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rodinný kvíz</title>
-<meta name="description" content="Hospodský kvíz pro rodinnou sešlost — 18 otázek, týmy po 4–6 lidech.">
+<meta name="description" content="Hospodský kvíz pro rodinnou sešlost — databáze 200 otázek ve 4 obtížnostech, týmy po 4–6 lidech.">
 <meta name="color-scheme" content="light dark">
 <style>
 :root{
   --bg:#f6ecd9; --surface:#fffaf4; --surface2:#efe1c6; --fg:#2a1f14; --muted:#8a7257;
-  --accent:#b5651d; --accent-ink:#fff8ee; --accent2:#5f7a44; --line:#e2d1ab; --shadow:0 10px 30px -12px rgba(42,31,20,.35);
+  --accent:#b5651d; --accent-ink:#fff8ee; --accent2:#5f7a44; --fact:#3c6e8f; --line:#e2d1ab; --shadow:0 10px 30px -12px rgba(42,31,20,.35);
 }
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#1a130d; --surface:#241a12; --surface2:#2f2316; --fg:#f3e9d8; --muted:#b39c7e;
-    --accent:#e0a94c; --accent-ink:#241a12; --accent2:#8fae63; --line:#3c2d1d; --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+    --accent:#e0a94c; --accent-ink:#241a12; --accent2:#8fae63; --fact:#7fb3d1; --line:#3c2d1d; --shadow:0 10px 30px -12px rgba(0,0,0,.6);
     color-scheme: dark;
   }
 }
@@ -29,6 +29,7 @@ body{
 h1,h2,h3,.chalk{font-family:'Permanent Marker','Kalam',system-ui,cursive; font-weight:400; letter-spacing:.5px; text-wrap:balance;}
 .wrap{width:100%; max-width:760px; display:flex; flex-direction:column; gap:18px; min-width:0;}
 .badge{background:var(--surface2); border:1px solid var(--line); color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.14em; padding:5px 12px; border-radius:999px; align-self:flex-start;}
+.badge.tier-1{color:#5f7a44;} .badge.tier-2{color:#9c7a2a;} .badge.tier-3{color:#b5651d;} .badge.tier-4{color:#b5333f;} .badge.tier-5{color:var(--fact);}
 .topline{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
 .title{font-size:clamp(1.9rem,5vw,2.6rem); color:var(--accent); margin:0;}
 .sub{color:var(--muted); margin:2px 0 0; font-size:.95rem;}
@@ -38,12 +39,16 @@ h1,h2,h3,.chalk{font-family:'Permanent Marker','Kalam',system-ui,cursive; font-w
 
 .team-row{display:flex; align-items:center; gap:10px;}
 .team-row input{flex:1; min-width:0;}
-input[type=text]{
+input[type=text],input[type=number]{
   background:var(--surface2); color:var(--fg); border:1px solid var(--line); border-radius:10px;
   padding:11px 13px; font:inherit; font-size:1rem; width:100%;
 }
-input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px;}
+input[type=text]:focus,input[type=number]:focus{outline:2px solid var(--accent); outline-offset:1px;}
 .teamlist{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+.field{display:flex; flex-direction:column; gap:6px; margin-top:18px;}
+.field label{font-weight:700; font-size:.92rem;}
+.field input[type=number]{max-width:140px;}
+.field .hint{color:var(--muted); font-size:.82rem;}
 .btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
 button{
   font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line);
@@ -75,6 +80,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .answerbox.show{display:block;}
 .answerbox .lbl{text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--muted);}
 .answerbox p{margin:4px 0 0; font-size:1.1rem; font-weight:600;}
+.factbox{margin-top:12px; padding:14px 18px; background:color-mix(in srgb, var(--fact) 12%, var(--surface2)); border-left:4px solid var(--fact); border-radius:8px; display:none;}
+.factbox.show{display:block;}
+.factbox .lbl{text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--fact);}
+.factbox p{margin:4px 0 0; font-size:.95rem; line-height:1.5;}
 .award{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
 .award button{display:flex; align-items:center; gap:7px;}
 .navrow{display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:10px; flex-wrap:wrap;}
@@ -98,7 +107,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   <div class="topline">
     <div>
       <h1 class="title">🍺 Rodinný kvíz</h1>
-      <p class="sub">Hospodská soutěž pro celou rodinu — týmy po 4–6 lidech</p>
+      <p class="sub">Hospodská soutěž pro celou rodinu — týmy po 4–6 lidech · databáze 200 otázek</p>
     </div>
   </div>
 </div>
@@ -107,11 +116,18 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   <div class="card">
     <span class="badge">Příprava</span>
     <h2 style="margin:10px 0 4px;">Sestavte týmy</h2>
-    <p class="sub" style="margin-bottom:0;">2–6 týmů, libovolný počet hráčů v týmu. Zadejte názvy a jde se hrát.</p>
+    <p class="sub" style="margin-bottom:0;">2–6 týmů, libovolný počet hráčů v týmu.</p>
     <div class="teamlist" id="teamlist"></div>
     <div class="btnrow">
       <button class="ghost" id="addTeam" type="button">+ Přidat tým</button>
     </div>
+
+    <div class="field">
+      <label for="qcount">Kolik otázek chcete hrát?</label>
+      <input type="number" id="qcount" min="8" max="64" step="4" value="20">
+      <span class="hint">Vybere se poměrně ze všech 4 obtížností (lehké → expert) — pokaždé jiné otázky.</span>
+    </div>
+
     <div class="btnrow">
       <button class="primary" id="startBtn" type="button">Spustit kvíz →</button>
     </div>
@@ -125,7 +141,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     <div class="topline">
       <span class="badge" id="catBadge">Kategorie</span>
       <span class="progress mono" id="progress">Otázka 1 / 18</span>
-      <button class="ghost small" id="restartGameBtn" type="button">↺ Od začátku</button>
+      <button class="ghost small" id="restartGameBtn" type="button">↺ Nová sada</button>
     </div>
     <p class="qtext" id="qtext"></p>
     <div class="visual" id="visual" hidden></div>
@@ -133,6 +149,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     <div class="answerbox" id="answerbox">
       <div class="lbl">Správná odpověď</div>
       <p id="answertext"></p>
+    </div>
+    <div class="factbox" id="factbox">
+      <div class="lbl">💡 Zajímavost</div>
+      <p id="facttext"></p>
     </div>
 
     <div class="award" id="award" hidden></div>
@@ -150,7 +170,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     <h2 style="margin:10px 0 0;">Výsledky</h2>
     <div class="podium" id="podium"></div>
     <div class="btnrow">
-      <button class="primary" id="restartBtn" type="button">Hrát znovu (vynulovat skóre)</button>
+      <button class="primary" id="restartBtn" type="button">Hrát znovu (nová sada otázek)</button>
     </div>
   </div>
 </div>
@@ -161,33 +181,271 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 (() => {
   'use strict';
 
-  const QUESTIONS = [
-    {cat:'Lehké', q:'Kolik krajů má Česká republika?', a:'14'},
-    {cat:'Lehké', q:'Jaký je chemický vzorec vody?', a:'H₂O'},
-    {cat:'Lehké', q:'Kolik měsíců v roce má 31 dní?', a:'7'},
-    {cat:'Lehké', q:'Jak se jmenuje měna používaná ve Velké Británii?', a:'Libra šterlinků'},
+  // ── Databáze otázek — 4 obtížnosti × 50 otázek, každá s odpovědí a zajímavostí ──
+  const BANK = {
+    leh: [
+      {q:'Kolik krajů má Česká republika?', a:'14', fact:'Dnešní krajské uspořádání platí od roku 2000, kdy nahradilo starší systém okresů.'},
+      {q:'Jaký je chemický vzorec vody?', a:'H₂O', fact:'Jedna molekula vody se skládá ze dvou atomů vodíku a jednoho atomu kyslíku.'},
+      {q:'Kolik měsíců v roce má 31 dní?', a:'7', fact:'Leden, březen, květen, červenec, srpen, říjen a prosinec.'},
+      {q:'Jak se jmenuje měna používaná ve Velké Británii?', a:'Libra šterlinků', fact:'Je to nejstarší měna světa, která je stále v oběhu — používá se už přes 1200 let.'},
+      {q:'Kolik nohou má pavouk?', a:'8', fact:'Proto patří mezi pavoukovce, ne mezi hmyz, který má nohou jen 6.'},
+      {q:'Jak se jmenuje hlavní město Austrálie? (není to Sydney!)', a:'Canberra', fact:'Vzniklo uměle jako kompromisní hlavní město mezi rivaly Sydney a Melbourne.'},
+      {q:'Který orgán lidského těla je svou plochou největší?', a:'Kůže', fact:'U dospělého člověka má plochu přibližně 2 metry čtvereční.'},
+      {q:'Kolik planet má naše sluneční soustava?', a:'8', fact:'Pluto bylo v roce 2006 překlasifikováno na trpasličí planetu.'},
+      {q:'Která řeka protéká Prahou?', a:'Vltava', fact:'Je nejdelší řekou, která teče celá po českém území.'},
+      {q:'Jak se jmenuje nejvyšší hora světa?', a:'Mount Everest', fact:'Měří 8 849 m a díky pohybu tektonických desek stále mírně roste.'},
+      {q:'Kolik států sousedí s Českou republikou?', a:'4 — Německo, Polsko, Slovensko, Rakousko', fact:'Česko nemá přímý přístup k moři, je jedním z mála vnitrozemských států Evropy.'},
+      {q:'V jakém roce skončila druhá světová válka?', a:'1945', fact:'V Evropě 8. května, v Asii po kapitulaci Japonska v září téhož roku.'},
+      {q:'Kdo byl prvním československým prezidentem?', a:'Tomáš Garrigue Masaryk', fact:'Ve funkci byl od vzniku státu v roce 1918 až do roku 1935.'},
+      {q:'Jak se jmenovala první žena ve vesmíru?', a:'Valentina Těreškovová', fact:'Letěla v roce 1963 na sovětské lodi Vostok 6.'},
+      {q:'Které zvíře je podle hmotnosti největší na světě?', a:'Plejtvák obrovský (modrá velryba)', fact:'Může vážit přes 150 tun, tedy víc než 30 dospělých slonů dohromady.'},
+      {q:'Kolik srdcí má chobotnice?', a:'3', fact:'Dvě srdce pumpují krev přes žábry, jedno pak zásobuje zbytek těla.'},
+      {q:'Kolik celovečerních filmů má filmová série Harry Potter?', a:'8', fact:'Natočeno bylo podle 7 knih — poslední díl rozdělili na dvě části.'},
+      {q:'Kdo namaloval obraz Mona Lisa?', a:'Leonardo da Vinci', fact:'Obraz dnes visí v pařížském Louvru a je pojištěn na stovky milionů dolarů.'},
+      {q:'Jak se jmenuje naše přirozená družice Země?', a:'Měsíc', fact:'Je to jediné vesmírné těleso mimo Zemi, na které kdy vkročil člověk.'},
+      {q:'Kolik barev má duha?', a:'7', fact:'Červená, oranžová, žlutá, zelená, modrá, indigo a fialová.'},
+      {q:'Jak se jmenuje hlavní město Japonska?', a:'Tokio', fact:'Jeho metropolitní oblast je nejlidnatější na světě — žije tam přes 37 milionů lidí.'},
+      {q:'Který savec vydrží nejdéle bez jídla a pití?', a:'Velbloud', fact:'Díky tukovým zásobám v hrbu vydrží i víc než týden bez vody.'},
+      {q:'V jaké zemi se nachází Eiffelova věž?', a:'Francie', fact:'Postavena byla v roce 1889 pro světovou výstavu v Paříži a měla stát jen dočasně.'},
+      {q:'Kolik zubů má dospělý člověk včetně moudráků?', a:'32', fact:'Bez moudráků je to 28 — ty bývají poslední, které prorazí, často až po dvacítce.'},
+      {q:'Jak se jmenuje největší oceán na světě?', a:'Tichý oceán', fact:'Pokrývá víc než třetinu celého povrchu planety.'},
+      {q:'Který kov je za pokojové teploty tekutý?', a:'Rtuť', fact:'Dříve se běžně používala v teploměrech, dnes kvůli toxicitě méně.'},
+      {q:'Jak se jmenuje pes z pohádek o Mickey Mousovi?', a:'Pluto', fact:'Na rozdíl od Goofyho, který je taky pes, Pluto neumí mluvit.'},
+      {q:'Jaký je nejrychlejší pozemský savec?', a:'Gepard', fact:'Dokáže zrychlit na víc než 100 km/h za pouhé tři sekundy.'},
+      {q:'Kolik kostí má dospělý člověk?', a:'206', fact:'Novorozenec jich má přes 270 — řada kostí v průběhu růstu srůstá dohromady.'},
+      {q:'Jak se jmenuje hlavní město Itálie?', a:'Řím', fact:'Přímo uvnitř Říma leží samostatný stát Vatikán, nejmenší na světě.'},
+      {q:'Kolik hráčů má na hřišti fotbalový tým?', a:'11', fact:'Včetně brankáře — pokud je vyloučen hráč, tým pokračuje s méně lidmi.'},
+      {q:'Jak se nazývá "král zvířat"?', a:'Lev', fact:'Lvi žijí ve smečkách zvaných pýchy, na rozdíl od většiny ostatních kočkovitých šelem.'},
+      {q:'Který je nejmenší stát světa?', a:'Vatikán', fact:'Jeho rozloha je necelých 0,5 kilometru čtverečního.'},
+      {q:'Kolik minut má hodina?', a:'60', fact:'A stejně tak má minuta 60 vteřin.'},
+      {q:'Jak se jmenuje nejhlubší jezero na světě, které leží v Rusku?', a:'Bajkal', fact:'Obsahuje přibližně 20 % veškeré sladké vody na povrchu Země.'},
+      {q:'Který plyn tvoří největší část zemské atmosféry?', a:'Dusík (asi 78 %)', fact:'Kyslíku je v atmosféře necelých 21 %, zbytek tvoří další plyny.'},
+      {q:'Jak se jmenuje vesmírná loď, která jako první přistála s lidmi na Měsíci?', a:'Apollo 11', fact:'K přistání došlo 20. července 1969, posádku tvořili Armstrong, Aldrin a Collins.'},
+      {q:'Kolik stran má šestiúhelník?', a:'6', fact:'Tento tvar mají třeba plástve, které staví včely — je nejúspornější na materiál.'},
+      {q:'Jaké je hlavní město Španělska?', a:'Madrid', fact:'Leží v nadmořské výšce přes 600 metrů, patří tak mezi nejvýše položená hlavní města Evropy.'},
+      {q:'Který pták neumí létat, ale skvěle plave?', a:'Tučňák', fact:'Nejtěžší druh, tučňák císařský, váží i přes 40 kilogramů.'},
+      {q:'Kolik gramů je v jednom kilogramu?', a:'1000', fact:'Kilogram je základní jednotkou hmotnosti v soustavě SI.'},
+      {q:'Jak se jmenuje bájný tvor, napůl kůň a napůl člověk?', a:'Kentaur', fact:'Pochází z řecké mytologie, proslulým kentaurem je mudrc Cheirón.'},
+      {q:'Jak se jmenuje nejdelší řeka světa?', a:'Nil (podle většiny zdrojů)', fact:'Měří přes 6 650 km, i když některé novější studie dávají přednost Amazonce.'},
+      {q:'Kolik rohů má fotbalové hřiště?', a:'4', fact:'V každém z nich je zapíchnutý praporek pro rozlišení hranice hřiště.'},
+      {q:'Jaký je oficiální jazyk Brazílie?', a:'Portugalština', fact:'Brazílie je jediná portugalsky mluvící země celé Jižní Ameriky.'},
+      {q:'Jak se jmenuje sob s červeným nosem, co vede Santovy sáně?', a:'Rudolf', fact:'Postavu vymysleli pro reklamní knížku obchodního domu v roce 1939.'},
+      {q:'Kolik písmen má česká abeceda?', a:'42', fact:'Počítáme-li i písmena s háčky a čárkami jako samostatná písmena.'},
+      {q:'Jak se jmenuje proces tání ledu na vodu?', a:'Tání (fázová přeměna)', fact:'Led taje při 0 °C za normálního atmosférického tlaku.'},
+      {q:'Který smysl vnímáme nosem?', a:'Čich', fact:'Čich je úzce propojený s chutí — proto při rýmě méně cítíme chutě jídla.'},
+    ],
+    str: [
+      {q:'Kolik časových pásem má Rusko?', a:'11', fact:'Je to nejvíc časových pásem ze všech zemí světa.'},
+      {q:'Jaké je hlavní město Kanady? (není to Toronto!)', a:'Ottawa', fact:'Toronto i Montreal jsou lidnatější, hlavním městem je ale Ottawa.'},
+      {q:'Jak se jmenuje úžina mezi Evropou a Afrikou?', a:'Gibraltarský průliv', fact:'V nejužším místě měří jen asi 13 kilometrů.'},
+      {q:'V jakém roce byla podepsána Magna Carta?', a:'1215', fact:'Omezila moc anglického krále a položila základ pozdějšímu ústavnímu právu.'},
+      {q:'Kolik let trvala tzv. stoletá válka mezi Anglií a Francií?', a:'116 let (1337–1453)', fact:'Navzdory názvu tedy netrvala přesně sto let.'},
+      {q:'Který český král nechal postavit Karlův most?', a:'Karel IV.', fact:'Byl zároveň zvolen i římským císařem Svaté říše římské.'},
+      {q:'V jakém roce vypukla první světová válka?', a:'1914', fact:'Spustil ji atentát na následníka trůnu Františka Ferdinanda d\'Este v Sarajevu.'},
+      {q:'Kdo složil operu Prodaná nevěsta?', a:'Bedřich Smetana', fact:'Patří mezi nejhranější české opery vůbec, i mimo Českou republiku.'},
+      {q:'Ve kterém roce vznikl slavný film Casablanca?', a:'1942', fact:'Film získal Oscara za nejlepší snímek roku.'},
+      {q:'Jak dlouho trvá zimní spánek ježka?', a:'Přibližně 5–6 měsíců', fact:'Během spánku se mu tep srdce zpomalí z několika set na jen pár úderů za minutu.'},
+      {q:'Kolik komor má srdce žáby?', a:'3', fact:'Na rozdíl od člověka, jehož srdce má komory 4.'},
+      {q:'Jak se jmenuje nejhlubší bod oceánu?', a:'Mariánský příkop (Challenger Deep)', fact:'Dosahuje hloubky přes 10 900 metrů — hlouběji, než je Everest vysoký.'},
+      {q:'Který prvek má v periodické tabulce značku Fe?', a:'Železo', fact:'Značka pochází z latinského slova "ferrum".'},
+      {q:'Kdo napsal tragédii Romeo a Julie?', a:'William Shakespeare', fact:'Hra vznikla přibližně kolem roku 1595.'},
+      {q:'Jaké je hlavní město Švýcarska?', a:'Bern', fact:'Není to Curych ani Ženeva, i když jsou obě města známější a lidnatější.'},
+      {q:'Kolik komor má lidské srdce?', a:'4', fact:'Dvě síně a dvě komory, oddělené chlopněmi.'},
+      {q:'V jakém roce padla Berlínská zeď?', a:'1989', fact:'Rozdělovala město přes 28 let, od roku 1961.'},
+      {q:'Jak se jmenuje proces, kterým rostliny vyrábí energii ze slunečního světla?', a:'Fotosyntéza', fact:'Při ní jako vedlejší produkt vzniká kyslík, který dýcháme.'},
+      {q:'Který anglický panovník sjednotil zemi proti Vikingům v 9. století?', a:'Alfréd Veliký', fact:'Je jediným anglickým panovníkem, kterému zůstal přídomek "Veliký".'},
+      {q:'Jak se jmenuje nejmenší kost v lidském těle?', a:'Třmínek (ve středním uchu)', fact:'Měří jen asi 3 milimetry.'},
+      {q:'V kterém století žil Leonardo da Vinci?', a:'15.–16. století (1452–1519)', fact:'Byl zároveň malířem, vynálezcem i přírodovědcem.'},
+      {q:'Jak se jmenuje největší horká poušť na světě?', a:'Sahara', fact:'Pokrývá plochu srovnatelnou s rozlohou celých USA.'},
+      {q:'Kolik strun má klasická kytara?', a:'6', fact:'Standardní ladění zní E-A-D-G-H-E.'},
+      {q:'Který americký prezident byl zastřelen v divadle?', a:'Abraham Lincoln', fact:'Stalo se tak v roce 1865 v divadle Ford\'s Theatre ve Washingtonu.'},
+      {q:'Jak se jmenuje Darwinova teorie o vývoji druhů?', a:'Evoluční teorie (přirozený výběr)', fact:'Publikoval ji v roce 1859 v knize O původu druhů.'},
+      {q:'Kolik kruhů má olympijská vlajka?', a:'5', fact:'Symbolizují pět obydlených kontinentů světa.'},
+      {q:'Jaký je chemický symbol zlata?', a:'Au', fact:'Pochází z latinského slova "aurum".'},
+      {q:'Kdo namaloval obraz Výkřik?', a:'Edvard Munch', fact:'Vytvořil ho v roce 1893, existují celkem čtyři verze díla.'},
+      {q:'V jaké zemi leží starobylé město Petra, vytesané do skály?', a:'Jordánsko', fact:'Bylo hlavním městem starověkých Nabatejců.'},
+      {q:'Jak se jmenuje nejdelší pohoří na světě?', a:'Andy', fact:'Táhnou se přes 7 000 kilometrů podél západního pobřeží Jižní Ameriky.'},
+      {q:'Který vynálezce je nejčastěji spojován se žárovkou?', a:'Thomas Edison', fact:'Princip žárovky vymysleli už dřív jiní, Edison ho ale zdokonalil a rozšířil do praxe.'},
+      {q:'V kterém roce se potopil Titanic?', a:'1912', fact:'Srazil se s ledovcem během své úplně první plavby.'},
+      {q:'Jak se jmenuje proces přeměny kapaliny na plyn?', a:'Odpařování (vypařování)', fact:'Opačný proces, přeměna plynu na kapalinu, se nazývá kondenzace.'},
+      {q:'Který řecký filozof byl učitelem Alexandra Velikého?', a:'Aristoteles', fact:'Sám byl žákem Platóna, jenž byl žákem Sokrata.'},
+      {q:'Jak se jmenuje hlavní město Turecka? (není to Istanbul!)', a:'Ankara', fact:'Istanbul je sice mnohem větší a známější, hlavním městem je ale Ankara.'},
+      {q:'Kolik měsíců obíhá planeta Mars?', a:'2 (Phobos a Deimos)', fact:'Jde o malá, nepravidelně tvarovaná tělesa, pravděpodobně zachycené asteroidy.'},
+      {q:'Který anglický král měl šest manželek?', a:'Jindřich VIII.', fact:'Dvě ze svých manželek nechal popravit.'},
+      {q:'Jak se jmenuje teplý mořský proud ovlivňující klima západní Evropy?', a:'Golfský proud', fact:'Přivádí teplou vodu z Mexického zálivu až k evropským břehům.'},
+      {q:'Kolik stupňů má pravý úhel?', a:'90', fact:'Celý kruh má dohromady 360 stupňů.'},
+      {q:'Kdo zkomponoval hudbu k baletu Labutí jezero?', a:'Petr Iljič Čajkovskij', fact:'Premiéru měl balet v roce 1877 v Moskvě.'},
+      {q:'Jak se jmenuje vrstva atmosféry, kde probíhá počasí?', a:'Troposféra', fact:'Sahá do výšky asi 10–12 kilometrů nad zemským povrchem.'},
+      {q:'Ve kterém roce vznikla Evropská unie pod tímto názvem?', a:'1993', fact:'Vznikla na základě Maastrichtské smlouvy, navazuje na starší Evropská společenství.'},
+      {q:'Jak se jmenuje nejstarší univerzita ve střední Evropě?', a:'Univerzita Karlova', fact:'Založil ji roku 1348 Karel IV. v Praze.'},
+      {q:'Který hudební nástroj má klávesy, struny i pedály zároveň?', a:'Klavír', fact:'Struny jsou ukryté uvnitř a rozeznívají se úhozem kladívek po stisknutí klávesy.'},
+      {q:'V jaké zemi se narodil Albert Einstein?', a:'Německo', fact:'Později získal i švýcarské a americké občanství.'},
+      {q:'Jak se jmenuje jev, kdy se Měsíc dostane mezi Zemi a Slunce?', a:'Zatmění Slunce', fact:'Může být úplné, částečné nebo prstencové, podle vzájemné polohy těles.'},
+      {q:'Který je momentálně nejlidnatější stát světa?', a:'Indie', fact:'V roce 2023 počtem obyvatel předstihla Čínu.'},
+      {q:'Jak se jmenuje proces, kterým se sůl rozpouští ve vodě?', a:'Rozpouštění (disociace)', fact:'Molekuly vody obklopí ionty soli a oddělí je od sebe.'},
+      {q:'Který italský stát leží celý uvnitř hranic Říma?', a:'Vatikán', fact:'Je to nejmenší stát světa, sídlo papeže a římskokatolické církve.'},
+    ],
+    tez: [
+      {q:'V jakém roce byla podepsána Vestfálská mírová smlouva, ukončující třicetiletou válku?', a:'1648', fact:'Položila základ modernímu pojetí státní suverenity v mezinárodních vztazích.'},
+      {q:'Kdo byl posledním byzantským císařem?', a:'Konstantin XI. Palaiologos', fact:'Padl při dobytí Konstantinopole Osmany v roce 1453.'},
+      {q:'Který kov má ze všech nejvyšší teplotu tání?', a:'Wolfram', fact:'Taje až při 3422 °C, proto se používal na vlákna v žárovkách.'},
+      {q:'V kterém roce proběhla bitva u Slavkova?', a:'1805', fact:'Napoleon v ní porazil spojená vojska Ruska a Rakouska — přezdívá se jí "bitva tří císařů".'},
+      {q:'Jak se jmenuje věta popisující vztah stran pravoúhlého trojúhelníku?', a:'Pythagorova věta', fact:'Zní: a² + b² = c², kde c je přepona.'},
+      {q:'Který spisovatel napsal román Sto roků samoty?', a:'Gabriel García Márquez', fact:'Za svou tvorbu dostal v roce 1982 Nobelovu cenu za literaturu.'},
+      {q:'V jakém roce byl objeven hrob egyptského faraona Tutanchamona?', a:'1922', fact:'Objevil ho archeolog Howard Carter v Údolí králů téměř nedotčený.'},
+      {q:'Jak se jmenuje nejbližší hvězda ke Slunci?', a:'Proxima Centauri', fact:'Je vzdálená přibližně 4,2 světelného roku.'},
+      {q:'Který panovník je znám jako "Sluneční král"?', a:'Ludvík XIV.', fact:'Vládl Francii přes 72 let — nejdéle ze všech evropských monarchů v dějinách.'},
+      {q:'V kterém roce vznikla Organizace spojených národů?', a:'1945', fact:'Nahradila předválečnou Společnost národů, která selhala v zabránění druhé světové válce.'},
+      {q:'Jak se nazývá jaderná reakce, při které se těžké jádro štěpí na lehčí?', a:'Jaderné štěpení (fise)', fact:'Využívá se jak v jaderných elektrárnách, tak v jaderných zbraních.'},
+      {q:'Kdo namaloval strop Sixtinské kaple?', a:'Michelangelo Buonarroti', fact:'Práce mu trvala přibližně čtyři roky, od 1508 do 1512.'},
+      {q:'Který ostrovní stát byl dříve znám jako Cejlon?', a:'Srí Lanka', fact:'Svůj název změnila v roce 1972.'},
+      {q:'Jak se jmenuje nejstarší dochovaný psaný zákoník na světě?', a:'Chammurapiho zákoník', fact:'Pochází z Babylonu, přibližně z 18. století před naším letopočtem.'},
+      {q:'V kterém roce získaly ženy ve Velké Británii volební právo ve stejném rozsahu jako muži?', a:'1928', fact:'Od roku 1918 mohly volit jen ženy starší 30 let s určitým majetkem.'},
+      {q:'Který fyzik formuloval obecnou teorii relativity?', a:'Albert Einstein', fact:'Publikoval ji v roce 1915, deset let po speciální teorii relativity.'},
+      {q:'Při jakém válečném tažení přešel Hannibal se slony přes Alpy?', a:'Druhá punská válka (218 př. n. l.)', fact:'Útok na Řím od severu Itálii zcela zaskočil.'},
+      {q:'Který anglický vědec formuloval zákony pohybu a gravitace?', a:'Isaac Newton', fact:'Jeho dílo Principia Mathematica vyšlo v roce 1687.'},
+      {q:'V jaké zemi se nachází starobylé město Machu Picchu?', a:'Peru', fact:'Postavili ho Inkové v 15. století vysoko v pohoří Andy.'},
+      {q:'Který astronom jako první tvrdil, že Země obíhá kolem Slunce, a ne naopak?', a:'Mikuláš Koperník', fact:'Svou heliocentrickou teorii publikoval v roce 1543, krátce před svou smrtí.'},
+      {q:'V kterém roce proběhla Kubánská raketová krize?', a:'1962', fact:'Svět byl tehdy nejblíže jaderné válce za celou dobu studené války.'},
+      {q:'Jak se jmenuje nejvyšší vodopád světa?', a:'Salto Ángel ve Venezuele', fact:'Jeho volný pád měří přes 800 metrů.'},
+      {q:'Který filozof napsal dílo Tak pravil Zarathustra?', a:'Friedrich Nietzsche', fact:'Vydával ho postupně v letech 1883 až 1885.'},
+      {q:'V jakém roce se rozpadl Sovětský svaz?', a:'1991', fact:'Rozdělil se na 15 samostatných států.'},
+      {q:'Který egyptský panovník nechal postavit Velkou pyramidu v Gíze?', a:'Chufu (Cheops)', fact:'Stavba je stará přes 4500 let a byla nejvyšší stavbou světa téměř 4000 let.'},
+      {q:'V kterém roce byl podepsán Versailleský mír, ukončující první světovou válku?', a:'1919', fact:'Jeho tvrdé podmínky vůči Německu přispěly k napětí před druhou světovou válkou.'},
+      {q:'Jak se jmenuje proces, kterým hvězdy fúzí vodíku na helium vyrábí energii?', a:'Jaderná fúze', fact:'Stejný proces probíhá i v jádru našeho Slunce.'},
+      {q:'Který skladatel zkomponoval Devátou symfonii, přestože byl v té době úplně hluchý?', a:'Ludwig van Beethoven', fact:'Premiéru v roce 1824 prý ani neslyšel a musel se otočit, aby viděl potlesk publika.'},
+      {q:'Ve které bitvě byl Napoleon Bonaparte definitivně poražen?', a:'Bitva u Waterloo (1815)', fact:'Proti němu stála koalice vedená Brity a Prusy.'},
+      {q:'Jak se jmenuje teorie popisující rozpínání vesmíru z jednoho výchozího bodu?', a:'Teorie velkého třesku', fact:'K rozpínání podle ní došlo před přibližně 13,8 miliardami let.'},
+      {q:'Který portugalský mořeplavec vedl první výpravu, jež obeplula celou zeměkouli?', a:'Fernão de Magalhães (Magellan)', fact:'Sám cestu nepřežil, dokončila ji až jeho posádka v roce 1522.'},
+      {q:'V kterém století žil český reformátor Jan Hus?', a:'14.–15. století (1370–1415)', fact:'Upálen byl v Kostnici za kacířství.'},
+      {q:'Jak se jmenuje nejstarší dosud fungující parlament na světě?', a:'Alþingi na Islandu', fact:'Byl založen už v roce 930.'},
+      {q:'Který americký prezident vedl zemi během velké hospodářské krize a zavedl politiku "New Deal"?', a:'Franklin D. Roosevelt', fact:'Byl jediným americkým prezidentem zvoleným čtyřikrát za sebou.'},
+      {q:'Jak se nazývá nejstarší známá literární epika na světě?', a:'Epos o Gilgamešovi', fact:'Pochází ze starověké Mezopotámie a je stará přes 4000 let.'},
+      {q:'Který chemický prvek má nejvyšší atomové číslo mezi běžně se v přírodě vyskytujícími prvky?', a:'Uran (92)', fact:'Těžší prvky se v přírodě prakticky nevyskytují, vznikají až uměle.'},
+      {q:'V jakém roce vstoupila v platnost první ústava Československa?', a:'1920', fact:'Nahradila provizorní uspořádání platné od vzniku státu v roce 1918.'},
+      {q:'Který řecký bůh byl patronem obchodu, zlodějů i poslů?', a:'Hermés', fact:'Byl také průvodcem duší zemřelých do podsvětí.'},
+      {q:'Ve které bitvě roku 1620 byla poražena česká stavovská armáda?', a:'Bitva na Bílé hoře', fact:'Následovala dlouhá rekatolizace a poněmčování českých zemí.'},
+      {q:'Jak se jmenuje proces přeměny pevné látky přímo na plyn, bez kapalné fáze?', a:'Sublimace', fact:'Typickým příkladem je suchý led, tedy zmrzlý oxid uhličitý.'},
+      {q:'Který anglický král podepsal Magnu Chartu?', a:'Jan Bezzemek', fact:'Stalo se tak v roce 1215 pod tlakem vzbouřených šlechticů.'},
+      {q:'V kterém roce byla objevena struktura DNA?', a:'1953', fact:'Zasloužili se o to James Watson a Francis Crick, klíčová byla i práce Rosalind Franklinové.'},
+      {q:'Jak se jmenuje nejstarší dochovaná divadelní hra, která se dodnes hraje?', a:'Peršané od Aischyla', fact:'Vznikla v roce 472 před naším letopočtem.'},
+      {q:'Který portugalský král financoval objevné plavby, díky kterým ho nazývají "Mořeplavec"?', a:'Jindřich Mořeplavec', fact:'Sám na moře nikdy nevyplul, ale organizoval výpravy podél afrického pobřeží.'},
+      {q:'V jakém roce proběhla bitva u Hastingsu, která změnila anglické dějiny?', a:'1066', fact:'Vilém Dobyvatel v ní porazil Harolda II. a stal se anglickým králem.'},
+      {q:'Jak se jmenuje nejjedovatější žába na světě?', a:'Pralesnička hrozná (zlatá)', fact:'Jed jediné žáby by teoreticky dokázal zabít až 10 dospělých lidí.'},
+      {q:'Který starověký astronom jako první pozoruhodně přesně spočítal obvod Země?', a:'Eratosthenés', fact:'Použil k tomu stíny ve dvou egyptských městech, přibližně kolem roku 240 př. n. l.'},
+      {q:'Jak se jmenuje nejstarší řecký filozofický směr zabývající se hledáním základní látky vesmíru?', a:'Milétská škola', fact:'Jejím zakladatelem byl Thalés z Milétu, žijící v 6. století př. n. l.'},
+      {q:'Který středověký český král byl i polským králem?', a:'Václav II.', fact:'Polským králem byl korunován v roce 1300.'},
+    ],
+    exp: [
+      {q:'Jak se jmenoval poslední jugoslávský král před nastolením komunismu?', a:'Petr II. Karađorđević', fact:'Po válce odešel do exilu a monarchie v Jugoslávii nebyla nikdy obnovena.'},
+      {q:'Který prvek má v periodické tabulce nejvyšší elektronegativitu?', a:'Fluor', fact:'Podle Paulingovy stupnice dosahuje hodnoty 3,98, nejvyšší ze všech prvků.'},
+      {q:'V jakém roce byla podepsána Vídeňská smlouva, přerozdělující Evropu po napoleonských válkách?', a:'1815', fact:'Vzešla z Vídeňského kongresu, který trval přes rok.'},
+      {q:'Jak se jmenuje nejmenší savec na světě podle hmotnosti?', a:'Rejsek etruský', fact:'Váží jen kolem 1,8 gramu — méně než mince.'},
+      {q:'Jak se jmenuje efekt, kdy se zdá, že rotující objekt mění směr otáčení kvůli snímkové frekvenci kamery?', a:'Stroboskopický efekt (wagon-wheel effect)', fact:'Běžně ho vidíme třeba u natočených kol vozidel na videu.'},
+      {q:'Který anglický matematik je považován za "otce" moderního počítače díky konceptu univerzálního stroje?', a:'Alan Turing', fact:'Jeho práce za druhé světové války pomohla prolomit německou šifru Enigma.'},
+      {q:'V jakém roce vypukla husitská revoluce po pražské defenestraci?', a:'1419', fact:'Šlo o druhou pražskou defenestraci — vyhození královských úředníků z okna radnice.'},
+      {q:'Jak se jmenuje nejstarší známý hudební nástroj objevený archeology?', a:'Kostěná flétna z jeskyně Hohle Fels', fact:'Je stará přibližně 40 000 let.'},
+      {q:'Který císař Svaté říše římské vydal Zlatou bulu sicilskou, uznávající dědičný český královský titul?', a:'Fridrich II.', fact:'Vydal ji v roce 1212 pro Přemysla Otakara I.'},
+      {q:'Jak se jmenuje jev, kdy světlo mění směr při přechodu mezi prostředími různé hustoty?', a:'Lom světla (refrakce)', fact:'Díky němu vypadá brčko ponořené ve sklenici vody jako "zalomené".'},
+      {q:'Který starověký řecký stát se proslavil obranou u Thermopyl proti perské invazi?', a:'Sparta (vedená králem Leonidasem)', fact:'Bitvy roku 480 př. n. l. se podle legendy zúčastnilo 300 Sparťanů.'},
+      {q:'Jak se jmenuje nejvzdálenější objekt vyrobený lidmi, který opustil sluneční soustavu?', a:'Voyager 1', fact:'Byla vypuštěna v roce 1977 a dodnes je v kontaktu se Zemí.'},
+      {q:'Jak se jmenuje teorém v teorii čísel, který zůstal nedokázaný přes 350 let?', a:'Velká Fermatova věta', fact:'Vyřešil ji až Andrew Wiles, jeho důkaz zveřejnili v roce 1994.'},
+      {q:'Který mořeplavec jako první doplul z Evropy do Indie po moři kolem Afriky?', a:'Vasco da Gama', fact:'Podařilo se mu to v letech 1497 až 1498.'},
+      {q:'Jak se jmenuje jednotka pro měření vzdáleností ve vesmíru, založená na paralaxe hvězdy?', a:'Parsek', fact:'Jeden parsek odpovídá přibližně 3,26 světelného roku.'},
+      {q:'Který byzantský císař nechal postavit chrám Hagia Sofia v Konstantinopoli?', a:'Justinián I.', fact:'Dokončen byl v roce 537 našeho letopočtu.'},
+      {q:'Jak se jmenuje efekt, kdy horký vzduch nad povrchem ohýbá světlo a vytváří iluzi vodní hladiny?', a:'Fata morgana (přízemní miráž)', fact:'Vzniká kvůli rozdílné hustotě sousedních vrstev teplého vzduchu.'},
+      {q:'Který mnich je považován za zakladatele moderní genetiky díky pokusům s hrachem?', a:'Gregor Mendel', fact:'Své objevy prováděl v klášterní zahradě v Brně v 19. století.'},
+      {q:'Který italský renesanční sochař vytvořil sochu Davida?', a:'Michelangelo Buonarroti', fact:'Dokončil ji v roce 1504, měří přes 5 metrů na výšku.'},
+      {q:'Který anglický král prohrál bitvu u Bannockburnu proti Skotům v roce 1314?', a:'Eduard II.', fact:'Vítězem bitvy byl skotský král Robert Bruce.'},
+      {q:'Jak se jmenuje částice objevená v roce 2012, která uděluje hmotnost ostatním částicím?', a:'Higgsův boson', fact:'Objevena byla v urychlovači LHC v Evropské organizaci pro jaderný výzkum (CERN).'},
+      {q:'Který portugalský výzkumník jako první doplul k mysu Dobré naděje na jihu Afriky?', a:'Bartolomeu Dias', fact:'Podařilo se mu to v roce 1488.'},
+      {q:'Jak se jmenuje nejstarší dochovaná kompletní tištěná kniha na světě?', a:'Diamantová sútra', fact:'Pochází z Číny, konkrétně z roku 868 našeho letopočtu.'},
+      {q:'Který francouzský král byl popraven gilotinou během Velké francouzské revoluce?', a:'Ludvík XVI.', fact:'Popraven byl v lednu 1793 na pařížském náměstí.'},
+      {q:'Jak se jmenuje síla, kvůli které se otáčející tělesa na severní a jižní polokouli odchylují díky rotaci Země?', a:'Coriolisova síla', fact:'Ovlivňuje třeba směr otáčení hurikánů na jednotlivých polokoulích.'},
+      {q:'Který řecký matematik jako první dokázal, že prvočísel je nekonečně mnoho?', a:'Eukleides', fact:'Důkaz pochází z jeho díla Základy, přibližně z roku 300 př. n. l.'},
+      {q:'Jak se jmenoval poslední ruský car, popravený s rodinou v roce 1918?', a:'Mikuláš II.', fact:'Byl zastřelen bolševiky v Jekatěrinburgu i s celou svou rodinou.'},
+      {q:'Který astronom pomocí dalekohledu objevil čtyři největší měsíce Jupiteru?', a:'Galileo Galilei', fact:'Objevil je v roce 1610, dnes se jim říká Galileovy měsíce.'},
+      {q:'Jak se jmenuje nejstarší dosud stojící dřevěná stavba na světě?', a:'Chrám Hórjúdži v Japonsku', fact:'Část komplexu je stará přes 1300 let.'},
+      {q:'Který anglický přírodovědec strávil pět let na lodi HMS Beagle, než formuloval evoluční teorii?', a:'Charles Darwin', fact:'Plavba se konala v letech 1831 až 1836.'},
+      {q:'Jak se jmenuje jev, kdy dvě blízké hvězdy obíhají společné těžiště?', a:'Dvojhvězda', fact:'Odhaduje se, že víc než polovina hvězd v naší galaxii jsou dvojhvězdy nebo vícenásobné systémy.'},
+      {q:'Který český král je pohřben v bazilice sv. Jiří mimo svatovítskou katedrálu?', a:'Vratislav II.', fact:'Byl prvním českým králem vůbec, korunovaným v roce 1085.'},
+      {q:'Jak se jmenuje hranice kolem černé díry, odkud už nic neuteče, ani světlo?', a:'Horizont událostí', fact:'Jeho velikost přímo závisí na hmotnosti dané černé díry.'},
+      {q:'Který mongolský vládce vytvořil největší souvislou pozemní říši v dějinách?', a:'Čingischán', fact:'Jeho říše na vrcholu sahala od Tichého oceánu až po východní Evropu.'},
+      {q:'Který italský vynálezce je spojován s vynálezem bezdrátového telegrafu?', a:'Guglielmo Marconi', fact:'Za svůj objev dostal v roce 1909 Nobelovu cenu za fyziku.'},
+      {q:'Jak se nazývá výbušný zánik masivní hvězdy na konci jejího života?', a:'Supernova', fact:'Může krátkodobě zářit jasněji než celá galaxie, ve které se nachází.'},
+      {q:'Který anglický filozof formuloval myšlenku "tabula rasa" — že se člověk rodí jako nepopsaný list?', a:'John Locke', fact:'Své myšlenky publikoval koncem 17. století.'},
+      {q:'Jak se jmenuje nejstarší olympijská disciplína, běhaná už na starověkých hrách?', a:'Stadion (běh na jednu délku stadionu)', fact:'Odpovídala přibližně 192 metrům.'},
+      {q:'Který španělský conquistador dobyl říši Aztéků?', a:'Hernán Cortés', fact:'Stalo se tak v letech 1519 až 1521.'},
+      {q:'Jak se jmenuje logaritmická škála pro měření intenzity zemětřesení?', a:'Richterova škála', fact:'Každý stupeň na stupnici znamená desetinásobně větší amplitudu otřesů.'},
+      {q:'Který habsburský panovník zrušil na českém území nevolnictví?', a:'Josef II.', fact:'Učinil tak patentem vydaným v roce 1781.'},
+      {q:'Který francouzský chemik a mikrobiolog vyvinul proces pasterizace a vakcínu proti vzteklině?', a:'Louis Pasteur', fact:'Jeho objevy položily základ moderní mikrobiologii.'},
+      {q:'Jak se jmenuje jedna z nejstarších dochovaných map světa, vyrytá do hliněné tabulky v Mezopotámii?', a:'Babylonská mapa světa (Imago Mundi)', fact:'Je stará přibližně 2600 let.'},
+      {q:'Který německý astronom formuloval tři zákony pohybu planet kolem Slunce?', a:'Johannes Kepler', fact:'Jeho zákony jako první popsaly eliptické, nikoliv kruhové dráhy planet.'},
+      {q:'Jak se jmenuje teorém, podle kterého nelze uvnitř formálního systému dokázat všechny pravdivé věty?', a:'Gödelovy věty o neúplnosti', fact:'Publikoval je rakouský logik Kurt Gödel v roce 1931.'},
+      {q:'Který starověký vládce nechal vybudovat Visuté zahrady, jeden ze sedmi divů světa?', a:'Nabukadnesar II. (podle tradice)', fact:'Jejich skutečná existence a přesná poloha je dodnes mezi historiky sporná.'},
+      {q:'Jak se jmenuje proces, při kterém se dva atomová jádra spojí a uvolní obrovské množství energie v hvězdách?', a:'Jaderná fúze', fact:'V jádru Slunce se tak každou sekundu přemění přes 600 milionů tun vodíku na helium.'},
+      {q:'Který anglický král byl zabit v bitvě u Bosworthu, čímž skončila válka růží?', a:'Richard III.', fact:'Jeho ostatky byly znovu nalezeny až v roce 2012 pod parkovištěm v Leicesteru.'},
+      {q:'Jak se jmenuje nejstarší známý systém psaní na světě?', a:'Sumerské klínové písmo', fact:'Vzniklo v Mezopotámii přibližně před 5000 lety.'},
+      {q:'Který řecký lékař je považován za "otce medicíny" a je po něm pojmenována lékařská přísaha?', a:'Hippokrates', fact:'Žil v 5. až 4. století př. n. l. na ostrově Kós.'},
+    ],
+  };
 
-    {cat:'Zeměpis', q:'Jak se jmenuje úžina oddělující Evropu od Afriky?', a:'Gibraltarský průliv'},
-    {cat:'Zeměpis', q:'Které město je hlavním městem Kanady? (není to Toronto!)', a:'Ottawa'},
-    {cat:'Zeměpis · obrázek', q:'Kterou zemi reprezentuje tahle vlajka?', a:'Belgie', visual:{type:'flag', colors:['#2d2926','#fcd116','#ef3340']}},
-    {cat:'Zeměpis', q:'Kolik časových pásem má Rusko?', a:'11'},
+  const TIER_LABELS = {leh:'Lehké', str:'Střední', tez:'Těžké', exp:'Expert'};
+  const TIER_ORDER = ['leh','str','tez','exp'];
+  BANK.str.push({q:'Kterou zemi reprezentuje tahle vlajka?', a:'Belgie', fact:'Belgická vlajka má svislé pruhy na rozdíl od podobné německé, která má vodorovné.'});
+  BANK.leh.push({q:'Jaké zvíře skrývá tahle emoji nápověda a jak dlouho je zimní spánek?', a:'Ježek — cca 5–6 měsíců', fact:'Během spánku mu klesne tělesná teplota skoro na teplotu okolí.', visual:{type:'emoji', value:'🦔'}});
+  BANK.leh.push({q:'Kterého hrdinu skrývají tahle emoji?', a:'Spider-Man / Pavouk', fact:'Postavu vytvořili Stan Lee a Steve Ditko v roce 1962.', visual:{type:'emoji', value:'🕷️🕸️🧑'}});
 
-    {cat:'Historie', q:'V jakém roce byla podepsána Magna Carta (Velká listina svobod)?', a:'1215'},
-    {cat:'Historie', q:'Kolik let trvala stoletá válka mezi Anglií a Francií?', a:'116 let (1337–1453)'},
-    {cat:'Historie', q:'Který český král nechal postavit Karlův most a stal se římským císařem?', a:'Karel IV.'},
-    {cat:'Historie', q:'V jakém roce vypukla první světová válka?', a:'1914'},
-
-    {cat:'Příroda · obrázek', q:'Jak dlouho trvá zimní spánek tohoto zvířete?', a:'Ježek — cca 5–6 měsíců', visual:{type:'emoji', value:'🦔'}},
-    {cat:'Příroda', q:'Který savec vydrží nejdéle bez vody?', a:'Velbloud — i přes týden'},
-    {cat:'Příroda', q:'Kolik komor má srdce žáby?', a:'3'},
-
-    {cat:'Kultura', q:'Kdo složil operu Prodaná nevěsta?', a:'Bedřich Smetana'},
-    {cat:'Kultura · obrázek', q:'Kterého hrdinu skrývají tahle emoji?', a:'Spider-Man / Pavouk', visual:{type:'emoji', value:'🕷️🕸️🧑'}},
-    {cat:'Kultura', q:'Ve kterém roce vznikl film Casablanca?', a:'1942'},
+  // Bonusové kolo "Hádej číslo" — týmy tipují číslo, vyhrává nejbližší odhad.
+  // Jen ověřená, stabilní čísla (rekordy, rozměry) — žádné čerstvé roční statistiky,
+  // u kterých by hrozilo, že bychom si vymysleli nepřesné číslo.
+  const GUESS_BANK = [
+    {q:'Kolik schodů vede od základny až na vrchol Eiffelovy věže?', a:1665, unit:'schodů', fact:'Výtahem to většina turistů ani nepozná — po schodech se běžně smí jen do druhého patra.'},
+    {q:'Jak dlouhá je čínská Velká zeď i se všemi odbočkami, v kilometrech?', a:21196, unit:'km', fact:'Číslo zahrnuje i boční zdi a přírodní překážky, podle oficiálního čínského průzkumu z roku 2012.'},
+    {q:'Kolik schodů vede na vrchol Petřínské rozhledny v Praze?', a:299, unit:'schodů', fact:'Rozhledna je zmenšenou kopií Eiffelovky, vysoká zhruba pětinu originálu.'},
+    {q:'Kolik má aktuálně Praha obyvatel, zaokrouhleno na statisíce?', a:1300000, unit:'obyvatel', fact:'Praha patří mezi deset nejlidnatějších měst celé Evropské unie.'},
+    {q:'Jak vysoká je v metrech nejvyšší hora České republiky, Sněžka?', a:1603, unit:'m n. m.', fact:'Vrchol leží přesně na česko-polské hranici a sdílí si ho obě země.'},
+    {q:'Kolik miliard lidí žije aktuálně na celé planetě Zemi, zaokrouhleno?', a:8, unit:'miliard', fact:'Hranici 8 miliard lidstvo překročilo v listopadu 2022.'},
+    {q:'Kolik kilometrů měří přibližně rovníkový obvod Země?', a:40075, unit:'km', fact:'Metr se původně definoval jako jedna desetimiliontina vzdálenosti od pólu k rovníku — proto to vyšlo tak kulaté.'},
+    {q:'Kolik metrů měří na výšku nejvyšší budova světa, dubajský Burdž Chalífa?', a:828, unit:'m', fact:'Dokončena byla v roce 2010 a dodnes drží rekord nejvyšší stavby na světě.'},
+    {q:'Kolik kilogramů váží přibližně srdce dospělé modré velryby?', a:180, unit:'kg', fact:'Je to největší srdce na světě — jeho tlukot je prý slyšet i dva kilometry daleko pod vodou.'},
+    {q:'Kolik tisíc kilometrů měří dohromady všechny cévy v těle dospělého člověka?', a:100, unit:'tisíc km', fact:'To je víc než dvakrát obvod celé Země.'},
+    {q:'Kolik schodů vede od základny po korunu newyorské Sochy svobody?', a:354, unit:'schodů', fact:'Odpovídá to zhruba 22 patrům běžné výškové budovy.'},
+    {q:'Kolik let se odhaduje, že trvala stavba Velké pyramidy v Gíze?', a:20, unit:'let', fact:'Na stavbě pracovaly desetitisíce placených dělníků, ne otroci, jak se dřív tradovalo.'},
   ];
 
-  const STORAGE_KEY = 'rodinny-kviz-v2';
-  let state = {teams: [], scores: [], current: 0, revealed: false, started: false};
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickQuestions(n){
+    n = Math.max(4, Math.min(n, BANK.leh.length + BANK.str.length + BANK.tez.length + BANK.exp.length));
+    const per = Math.floor(n / 4);
+    const counts = {leh: per, str: per, tez: per, exp: per};
+    let remainder = n - per * 4;
+    for(const t of TIER_ORDER){
+      if(remainder <= 0) break;
+      counts[t]++; remainder--;
+    }
+    let out = [];
+    TIER_ORDER.forEach(t => {
+      const picked = shuffle(BANK[t]).slice(0, Math.min(counts[t], BANK[t].length));
+      picked.forEach(q => out.push(Object.assign({cat: TIER_LABELS[t], tier: t}, q)));
+    });
+    const guessCount = Math.min(6, GUESS_BANK.length);
+    shuffle(GUESS_BANK).slice(0, guessCount).forEach(q => {
+      out.push(Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess'}, q));
+    });
+    return out;
+  }
+
+  const STORAGE_KEY = 'rodinny-kviz-v3';
+  let state = {teams: [], scores: [], questions: [], current: 0, revealed: false, started: false, qcount: 20};
 
   function load(){
     try{
@@ -204,6 +462,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 
   const teamlist = document.getElementById('teamlist');
   const addTeamBtn = document.getElementById('addTeam');
+  const qcountInput = document.getElementById('qcount');
   const startBtn = document.getElementById('startBtn');
   const setupEl = document.getElementById('setup');
   const gameEl = document.getElementById('game');
@@ -215,6 +474,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const visual = document.getElementById('visual');
   const answerbox = document.getElementById('answerbox');
   const answertext = document.getElementById('answertext');
+  const factbox = document.getElementById('factbox');
+  const facttext = document.getElementById('facttext');
   const revealBtn = document.getElementById('revealBtn');
   const nextBtn = document.getElementById('nextBtn');
   const award = document.getElementById('award');
@@ -223,6 +484,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const restartGameBtn = document.getElementById('restartGameBtn');
 
   const DEFAULT_NAMES = ['Tým Babička', 'Tým Dědeček'];
+  const TIER_CSS = {leh:'tier-1', str:'tier-2', tez:'tier-3', exp:'tier-4', guess:'tier-5'};
 
   function renderTeamInputs(){
     teamlist.innerHTML = '';
@@ -315,16 +577,21 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   }
 
   function renderQuestion(){
-    const q = QUESTIONS[state.current];
+    const q = state.questions[state.current];
     catBadge.textContent = q.cat;
-    progress.textContent = 'Otázka ' + (state.current + 1) + ' / ' + QUESTIONS.length;
+    catBadge.className = 'badge ' + (TIER_CSS[q.tier] || '');
+    progress.textContent = 'Otázka ' + (state.current + 1) + ' / ' + state.questions.length;
     qtext.textContent = q.q;
     buildVisual(q.visual);
-    answertext.textContent = q.a;
+    answertext.textContent = q.type === 'guess'
+      ? q.a.toLocaleString('cs-CZ') + ' ' + q.unit
+      : q.a;
+    facttext.textContent = q.fact || '';
     answerbox.classList.toggle('show', state.revealed);
+    factbox.classList.toggle('show', state.revealed && !!q.fact);
     revealBtn.textContent = state.revealed ? 'Skrýt odpověď' : 'Zobrazit odpověď';
     nextBtn.disabled = !state.revealed;
-    nextBtn.textContent = state.current === QUESTIONS.length - 1 ? 'Zobrazit výsledky →' : 'Další otázka →';
+    nextBtn.textContent = state.current === state.questions.length - 1 ? 'Zobrazit výsledky →' : 'Další otázka →';
     renderAward();
   }
 
@@ -335,7 +602,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   });
 
   nextBtn.addEventListener('click', () => {
-    if(state.current < QUESTIONS.length - 1){
+    if(state.current < state.questions.length - 1){
       state.current += 1;
       state.revealed = false;
       save();
@@ -366,6 +633,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   }
 
   function restartGame(){
+    state.questions = pickQuestions(state.qcount);
     state.scores = state.teams.map(() => 0);
     state.current = 0;
     state.revealed = false;
@@ -383,7 +651,9 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   startBtn.addEventListener('click', () => {
     state.teams = state.teams.map((n, i) => (n && n.trim()) || ('Tým ' + (i + 1)));
     if(state.teams.length < 2){ return; }
-    state.scores = state.teams.map((_, i) => state.scores[i] || 0);
+    state.qcount = Math.max(8, Math.min(parseInt(qcountInput.value, 10) || 20, 64));
+    state.questions = pickQuestions(state.qcount);
+    state.scores = state.teams.map(() => 0);
     state.current = 0;
     state.revealed = false;
     state.started = true;
@@ -401,14 +671,15 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     if(!state.scores.length) state.scores = state.teams.map(() => 0);
     renderTeamInputs();
     if(state.teams.length >= 6) addTeamBtn.disabled = true;
+    qcountInput.value = state.qcount || 20;
 
-    if(state.started && state.current < QUESTIONS.length){
+    if(state.started && state.questions.length && state.current < state.questions.length){
       setupEl.hidden = true;
       scorebar.hidden = false;
       gameEl.hidden = false;
       renderScorebar();
       renderQuestion();
-    } else if(state.started){
+    } else if(state.started && state.questions.length){
       setupEl.hidden = true;
       scorebar.hidden = false;
       renderScorebar();
