@@ -87,6 +87,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .award{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
 .award button{display:flex; align-items:center; gap:7px;}
 .navrow{display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:10px; flex-wrap:wrap;}
+.confirm-inline{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.confirm-note{color:var(--muted); font-size:.8rem;}
 
 .podium{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
 .prow{display:flex; align-items:center; gap:14px; background:var(--surface2); border-radius:12px; padding:14px 16px;}
@@ -142,6 +144,11 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       <span class="badge" id="catBadge">Kategorie</span>
       <span class="progress mono" id="progress">Otázka 1 / 18</span>
       <button class="ghost small" id="restartGameBtn" type="button">↺ Nová sada</button>
+      <span class="confirm-inline" id="restartGameConfirm" hidden>
+        <span class="confirm-note">Smaže všechny dosavadní body.</span>
+        <button class="primary small" id="restartGameYes" type="button">Ano, nová sada</button>
+        <button class="ghost small" id="restartGameCancel" type="button">Pokračovat</button>
+      </span>
     </div>
     <p class="qtext" id="qtext"></p>
     <div class="visual" id="visual" hidden></div>
@@ -482,6 +489,9 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const podium = document.getElementById('podium');
   const restartBtn = document.getElementById('restartBtn');
   const restartGameBtn = document.getElementById('restartGameBtn');
+  const restartGameConfirm = document.getElementById('restartGameConfirm');
+  const restartGameYes = document.getElementById('restartGameYes');
+  const restartGameCancel = document.getElementById('restartGameCancel');
 
   const DEFAULT_NAMES = ['Tým Babička', 'Tým Dědeček'];
   const TIER_CSS = {leh:'tier-1', str:'tier-2', tez:'tier-3', exp:'tier-4', guess:'tier-5'};
@@ -577,6 +587,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   }
 
   function renderQuestion(){
+    restartGameConfirm.hidden = true;
+    restartGameBtn.hidden = false;
     const q = state.questions[state.current];
     catBadge.textContent = q.cat;
     catBadge.className = 'badge ' + (TIER_CSS[q.tier] || '');
@@ -632,11 +644,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     save();
   }
 
-  function restartGame(){
-    const hasProgress = state.started && (state.scores.some(s => s > 0) || state.current > 0);
-    if(hasProgress && !confirm('Opravdu začít novou sadu otázek? Aktuální skóre i rozehraná otázka se smažou.')){
-      return;
-    }
+  function doRestart(){
     state.questions = pickQuestions(state.qcount);
     state.scores = state.teams.map(() => 0);
     state.current = 0;
@@ -649,8 +657,23 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     renderQuestion();
   }
 
-  restartBtn.addEventListener('click', restartGame);
-  restartGameBtn.addEventListener('click', restartGame);
+  restartBtn.addEventListener('click', doRestart);
+
+  restartGameBtn.addEventListener('click', () => {
+    const hasProgress = state.scores.some(s => s > 0) || state.current > 0;
+    if(!hasProgress){ doRestart(); return; }
+    restartGameBtn.hidden = true;
+    restartGameConfirm.hidden = false;
+  });
+  restartGameYes.addEventListener('click', () => {
+    restartGameConfirm.hidden = true;
+    restartGameBtn.hidden = false;
+    doRestart();
+  });
+  restartGameCancel.addEventListener('click', () => {
+    restartGameConfirm.hidden = true;
+    restartGameBtn.hidden = false;
+  });
 
   startBtn.addEventListener('click', () => {
     state.teams = state.teams.map((n, i) => (n && n.trim()) || ('Tým ' + (i + 1)));
