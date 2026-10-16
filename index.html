@@ -633,6 +633,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   }
 
   function restartGame(){
+    const hasProgress = state.started && (state.scores.some(s => s > 0) || state.current > 0);
+    if(hasProgress && !confirm('Opravdu začít novou sadu otázek? Aktuální skóre i rozehraná otázka se smažou.')){
+      return;
+    }
     state.questions = pickQuestions(state.qcount);
     state.scores = state.teams.map(() => 0);
     state.current = 0;
