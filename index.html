@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rodinný kvíz</title>
+<meta name="description" content="Hospodský kvíz pro rodinnou sešlost — 18 otázek, týmy po 4–6 lidech.">
+<meta name="color-scheme" content="light dark">
+<style>
+:root{
+  --bg:#f6ecd9; --surface:#fffaf4; --surface2:#efe1c6; --fg:#2a1f14; --muted:#8a7257;
+  --accent:#b5651d; --accent-ink:#fff8ee; --accent2:#5f7a44; --line:#e2d1ab; --shadow:0 10px 30px -12px rgba(42,31,20,.35);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1a130d; --surface:#241a12; --surface2:#2f2316; --fg:#f3e9d8; --muted:#b39c7e;
+    --accent:#e0a94c; --accent-ink:#241a12; --accent2:#8fae63; --line:#3c2d1d; --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+*{box-sizing:border-box;}
+html,body{margin:0; padding:0; min-height:100%;}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:'Figtree',system-ui,sans-serif;
+  padding-inline:16px; padding-block:28px;
+  display:flex; flex-direction:column; align-items:center; gap:22px;
+}
+h1,h2,h3,.chalk{font-family:'Permanent Marker','Kalam',system-ui,cursive; font-weight:400; letter-spacing:.5px; text-wrap:balance;}
+.wrap{width:100%; max-width:760px; display:flex; flex-direction:column; gap:18px; min-width:0;}
+.badge{background:var(--surface2); border:1px solid var(--line); color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.14em; padding:5px 12px; border-radius:999px; align-self:flex-start;}
+.topline{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+.title{font-size:clamp(1.9rem,5vw,2.6rem); color:var(--accent); margin:0;}
+.sub{color:var(--muted); margin:2px 0 0; font-size:.95rem;}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:26px 24px; box-shadow:var(--shadow);}
+
+.team-row{display:flex; align-items:center; gap:10px;}
+.team-row input{flex:1; min-width:0;}
+input[type=text]{
+  background:var(--surface2); color:var(--fg); border:1px solid var(--line); border-radius:10px;
+  padding:11px 13px; font:inherit; font-size:1rem; width:100%;
+}
+input[type=text]:focus{outline:2px solid var(--accent); outline-offset:1px;}
+.teamlist{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+.btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+button{
+  font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line);
+  padding:11px 18px; background:var(--surface2); color:var(--fg); transition:transform .08s ease;
+}
+button:hover{transform:translateY(-1px);}
+button:active{transform:translateY(0);}
+button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+button.primary{background:var(--accent); color:var(--accent-ink); border-color:transparent; font-weight:700;}
+button.ghost{background:transparent;}
+button.small{padding:7px 12px; font-size:.85rem; border-radius:8px;}
+button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+.remove{background:none; border:none; color:var(--muted); font-size:1.3rem; line-height:1; padding:4px 8px; cursor:pointer;}
+.remove:hover{color:var(--accent);}
+
+.scorebar{display:flex; gap:10px; flex-wrap:wrap; width:100%; max-width:760px;}
+.score-chip{flex:1 1 140px; min-width:120px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+.score-chip .nm{font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.score-chip .pt{font-family:'JetBrains Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; color:var(--accent); font-weight:700; font-size:1.15rem;}
+.score-chip.lead{border-color:var(--accent);}
+
+.progress{color:var(--muted); font-size:.85rem;}
+.qtext{font-size:clamp(1.2rem,3.4vw,1.55rem); line-height:1.4; margin:14px 0 0;}
+.visual{display:flex; justify-content:center; align-items:center; margin:18px 0; min-height:90px;}
+.flag{display:flex; width:180px; max-width:60vw; height:120px; border-radius:6px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow);}
+.flag div{flex:1;}
+.emoji-visual{font-size:5rem; line-height:1;}
+.answerbox{margin-top:16px; padding:16px 18px; background:var(--surface2); border-left:4px solid var(--accent2); border-radius:8px; display:none;}
+.answerbox.show{display:block;}
+.answerbox .lbl{text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--muted);}
+.answerbox p{margin:4px 0 0; font-size:1.1rem; font-weight:600;}
+.award{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
+.award button{display:flex; align-items:center; gap:7px;}
+.navrow{display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:10px; flex-wrap:wrap;}
+
+.podium{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
+.prow{display:flex; align-items:center; gap:14px; background:var(--surface2); border-radius:12px; padding:14px 16px;}
+.prow.win{background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, var(--surface2)), var(--surface2)); border:1px solid var(--accent);}
+.rank{font-family:'Permanent Marker'; font-size:1.4rem; color:var(--accent); width:34px; text-align:center;}
+.prow .nm{flex:1; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.prow .pt{font-family:'JetBrains Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums; font-size:1.3rem; color:var(--accent); font-weight:700;}
+
+[hidden]{display:none!important;}
+.footer-note{color:var(--muted); font-size:.8rem; text-align:center; max-width:560px;}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Figtree:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topline">
+    <div>
+      <h1 class="title">🍺 Rodinný kvíz</h1>
+      <p class="sub">Hospodská soutěž pro celou rodinu — týmy po 4–6 lidech</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="setup">
+  <div class="card">
+    <span class="badge">Příprava</span>
+    <h2 style="margin:10px 0 4px;">Sestavte týmy</h2>
+    <p class="sub" style="margin-bottom:0;">2–6 týmů, libovolný počet hráčů v týmu. Zadejte názvy a jde se hrát.</p>
+    <div class="teamlist" id="teamlist"></div>
+    <div class="btnrow">
+      <button class="ghost" id="addTeam" type="button">+ Přidat tým</button>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="startBtn" type="button">Spustit kvíz →</button>
+    </div>
+  </div>
+</div>
+
+<div class="scorebar" id="scorebar" hidden></div>
+
+<div class="wrap" id="game" hidden>
+  <div class="card">
+    <div class="topline">
+      <span class="badge" id="catBadge">Kategorie</span>
+      <span class="progress mono" id="progress">Otázka 1 / 18</span>
+    </div>
+    <p class="qtext" id="qtext"></p>
+    <div class="visual" id="visual" hidden></div>
+
+    <div class="answerbox" id="answerbox">
+      <div class="lbl">Správná odpověď</div>
+      <p id="answertext"></p>
+    </div>
+
+    <div class="award" id="award" hidden></div>
+
+    <div class="navrow">
+      <button class="ghost small" id="revealBtn" type="button">Zobrazit odpověď</button>
+      <button class="primary" id="nextBtn" type="button" disabled>Další otázka →</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="results" hidden>
+  <div class="card">
+    <span class="badge">Konec hry</span>
+    <h2 style="margin:10px 0 0;">Výsledky</h2>
+    <div class="podium" id="podium"></div>
+    <div class="btnrow">
+      <button class="primary" id="restartBtn" type="button">Hrát znovu (vynulovat skóre)</button>
+    </div>
+  </div>
+</div>
+
+<p class="footer-note">Tip pro hospodského: u otázek s obrázkem nechte týmy chvíli hádat, než odhalíte odpověď. Body uděluje hospodský podle vlastního uvážení — klidně i půl bodu za částečnou odpověď formou dvou kliknutí.</p>
+
+<script>
+(() => {
+  'use strict';
+
+  const QUESTIONS = [
+    {cat:'Rozehřívačka', q:'Kolik nohou má pavouk?', a:'8'},
+    {cat:'Rozehřívačka', q:'Jak se jmenuje hlavní město Austrálie? (není to Sydney!)', a:'Canberra'},
+    {cat:'Rozehřívačka', q:'Který orgán lidského těla je svou plochou největší?', a:'Kůže'},
+    {cat:'Rozehřívačka', q:'Kolik planet má naše sluneční soustava, odkdy přišlo Pluto o status planety?', a:'8'},
+
+    {cat:'Zeměpis', q:'Která řeka protéká Prahou?', a:'Vltava'},
+    {cat:'Zeměpis', q:'Jak se jmenuje nejvyšší hora světa a kolik měří metrů?', a:'Mount Everest, 8 849 m'},
+    {cat:'Zeměpis · obrázek', q:'Kterou zemi reprezentuje tahle vlajka?', a:'Itálie', visual:{type:'flag', colors:['#13883f','#f5f5f0','#cc1126']}},
+    {cat:'Zeměpis', q:'Kolik států sousedí s Českou republikou?', a:'4 — Německo, Polsko, Slovensko, Rakousko'},
+
+    {cat:'Historie', q:'V jakém roce skončila druhá světová válka?', a:'1945'},
+    {cat:'Historie', q:'Kdo byl prvním československým prezidentem?', a:'Tomáš Garrigue Masaryk'},
+    {cat:'Historie', q:'V jakém roce se rozdělilo Československo na Českou a Slovenskou republiku?', a:'1993'},
+    {cat:'Historie', q:'Jak se jmenovala první žena ve vesmíru?', a:'Valentina Těreškovová (1963)'},
+
+    {cat:'Příroda · obrázek', q:'Jaké zvíře je na obrázku a kolika let se v průměru dožívá?', a:'Želva — některé druhy se dožívají přes 100 let', visual:{type:'emoji', value:'🐢'}},
+    {cat:'Příroda', q:'Které zvíře je podle hmotnosti největší na světě?', a:'Plejtvák obrovský (modrá velryba)'},
+    {cat:'Příroda', q:'Kolik srdcí má chobotnice?', a:'3'},
+
+    {cat:'Kultura', q:'Kolik celovečerních filmů má filmová série Harry Potter?', a:'8'},
+    {cat:'Kultura · obrázek', q:'Který film skrývají tahle tři emoji?', a:'Lví král', visual:{type:'emoji', value:'🦁👑🌍'}},
+    {cat:'Kultura', q:'Kdo namaloval obraz Mona Lisa?', a:'Leonardo da Vinci'},
+  ];
+
+  const STORAGE_KEY = 'rodinny-kviz-v1';
+  let state = {teams: [], scores: [], current: 0, revealed: false, started: false};
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.teams)) state = Object.assign(state, parsed);
+      }
+    }catch(e){}
+  }
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  const teamlist = document.getElementById('teamlist');
+  const addTeamBtn = document.getElementById('addTeam');
+  const startBtn = document.getElementById('startBtn');
+  const setupEl = document.getElementById('setup');
+  const gameEl = document.getElementById('game');
+  const resultsEl = document.getElementById('results');
+  const scorebar = document.getElementById('scorebar');
+  const catBadge = document.getElementById('catBadge');
+  const progress = document.getElementById('progress');
+  const qtext = document.getElementById('qtext');
+  const visual = document.getElementById('visual');
+  const answerbox = document.getElementById('answerbox');
+  const answertext = document.getElementById('answertext');
+  const revealBtn = document.getElementById('revealBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const award = document.getElementById('award');
+  const podium = document.getElementById('podium');
+  const restartBtn = document.getElementById('restartBtn');
+
+  const DEFAULT_NAMES = ['Tým Babička', 'Tým Dědeček'];
+
+  function renderTeamInputs(){
+    teamlist.innerHTML = '';
+    const names = state.teams.length ? state.teams : DEFAULT_NAMES;
+    names.forEach((name, i) => addTeamRow(name, i));
+    if(!state.teams.length) state.teams = names.slice();
+  }
+
+  function addTeamRow(value, idx){
+    const row = document.createElement('div');
+    row.className = 'team-row';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'team-input-' + idx;
+    input.value = value || '';
+    input.placeholder = 'Název týmu ' + (idx + 1);
+    input.maxLength = 40;
+    input.addEventListener('input', () => { state.teams[idx] = input.value; save(); });
+    row.appendChild(input);
+    if(teamlist.children.length + 1 > 2){
+      const rm = document.createElement('button');
+      rm.type = 'button'; rm.className = 'remove'; rm.textContent = '×';
+      rm.setAttribute('aria-label', 'Odebrat tým');
+      rm.addEventListener('click', () => {
+        state.teams.splice(idx, 1);
+        renderTeamInputs();
+        save();
+      });
+      row.appendChild(rm);
+    }
+    teamlist.appendChild(row);
+  }
+
+  addTeamBtn.addEventListener('click', () => {
+    if(state.teams.length >= 6) return;
+    state.teams.push('');
+    renderTeamInputs();
+    if(state.teams.length >= 6) addTeamBtn.disabled = true;
+  });
+
+  function renderScorebar(){
+    scorebar.innerHTML = '';
+    const max = Math.max(0, ...state.scores);
+    state.teams.forEach((name, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'score-chip' + (state.scores[i] === max && max > 0 ? ' lead' : '');
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name || ('Tým ' + (i+1));
+      const pt = document.createElement('span'); pt.className = 'pt'; pt.textContent = state.scores[i] || 0;
+      chip.appendChild(nm); chip.appendChild(pt);
+      scorebar.appendChild(chip);
+    });
+  }
+
+  function buildVisual(v){
+    visual.innerHTML = '';
+    if(!v){ visual.hidden = true; return; }
+    visual.hidden = false;
+    if(v.type === 'flag'){
+      const flag = document.createElement('div');
+      flag.className = 'flag';
+      v.colors.forEach(c => {
+        const stripe = document.createElement('div');
+        stripe.style.background = c;
+        flag.appendChild(stripe);
+      });
+      visual.appendChild(flag);
+    } else if(v.type === 'emoji'){
+      const span = document.createElement('div');
+      span.className = 'emoji-visual';
+      span.textContent = v.value;
+      visual.appendChild(span);
+    }
+  }
+
+  function renderAward(){
+    award.innerHTML = '';
+    if(!state.revealed){ award.hidden = true; return; }
+    award.hidden = false;
+    state.teams.forEach((name, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'small';
+      b.innerHTML = '+1 bod — ' + (name || ('Tým ' + (i+1)));
+      b.addEventListener('click', () => {
+        state.scores[i] = (state.scores[i] || 0) + 1;
+        save();
+        renderScorebar();
+      });
+      award.appendChild(b);
+    });
+  }
+
+  function renderQuestion(){
+    const q = QUESTIONS[state.current];
+    catBadge.textContent = q.cat;
+    progress.textContent = 'Otázka ' + (state.current + 1) + ' / ' + QUESTIONS.length;
+    qtext.textContent = q.q;
+    buildVisual(q.visual);
+    answertext.textContent = q.a;
+    answerbox.classList.toggle('show', state.revealed);
+    revealBtn.textContent = state.revealed ? 'Skrýt odpověď' : 'Zobrazit odpověď';
+    nextBtn.disabled = !state.revealed;
+    nextBtn.textContent = state.current === QUESTIONS.length - 1 ? 'Zobrazit výsledky →' : 'Další otázka →';
+    renderAward();
+  }
+
+  revealBtn.addEventListener('click', () => {
+    state.revealed = !state.revealed;
+    save();
+    renderQuestion();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if(state.current < QUESTIONS.length - 1){
+      state.current += 1;
+      state.revealed = false;
+      save();
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  });
+
+  function showResults(){
+    gameEl.hidden = true;
+    resultsEl.hidden = false;
+    const ranked = state.teams
+      .map((name, i) => ({name: name || ('Tým ' + (i+1)), score: state.scores[i] || 0}))
+      .sort((a, b) => b.score - a.score);
+    podium.innerHTML = '';
+    ranked.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'prow' + (i === 0 ? ' win' : '');
+      const rank = document.createElement('div'); rank.className = 'rank';
+      rank.textContent = i === 0 ? '🏆' : ('#' + (i + 1));
+      const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = t.name;
+      const pt = document.createElement('div'); pt.className = 'pt'; pt.textContent = t.score;
+      row.appendChild(rank); row.appendChild(nm); row.appendChild(pt);
+      podium.appendChild(row);
+    });
+    save();
+  }
+
+  restartBtn.addEventListener('click', () => {
+    state.scores = state.teams.map(() => 0);
+    state.current = 0;
+    state.revealed = false;
+    save();
+    resultsEl.hidden = true;
+    gameEl.hidden = false;
+    scorebar.hidden = false;
+    renderScorebar();
+    renderQuestion();
+  });
+
+  startBtn.addEventListener('click', () => {
+    state.teams = state.teams.map((n, i) => (n && n.trim()) || ('Tým ' + (i + 1)));
+    if(state.teams.length < 2){ return; }
+    state.scores = state.teams.map((_, i) => state.scores[i] || 0);
+    state.current = 0;
+    state.revealed = false;
+    state.started = true;
+    save();
+    setupEl.hidden = true;
+    scorebar.hidden = false;
+    gameEl.hidden = false;
+    renderScorebar();
+    renderQuestion();
+  });
+
+  function boot(){
+    load();
+    if(!state.teams.length) state.teams = DEFAULT_NAMES.slice();
+    if(!state.scores.length) state.scores = state.teams.map(() => 0);
+    renderTeamInputs();
+    if(state.teams.length >= 6) addTeamBtn.disabled = true;
+
+    if(state.started && state.current < QUESTIONS.length){
+      setupEl.hidden = true;
+      scorebar.hidden = false;
+      gameEl.hidden = false;
+      renderScorebar();
+      renderQuestion();
+    } else if(state.started){
+      setupEl.hidden = true;
+      scorebar.hidden = false;
+      renderScorebar();
+      showResults();
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
