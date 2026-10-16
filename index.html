@@ -125,6 +125,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     <div class="topline">
       <span class="badge" id="catBadge">Kategorie</span>
       <span class="progress mono" id="progress">Otázka 1 / 18</span>
+      <button class="ghost small" id="restartGameBtn" type="button">↺ Od začátku</button>
     </div>
     <p class="qtext" id="qtext"></p>
     <div class="visual" id="visual" hidden></div>
@@ -161,31 +162,31 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   'use strict';
 
   const QUESTIONS = [
-    {cat:'Rozehřívačka', q:'Kolik nohou má pavouk?', a:'8'},
-    {cat:'Rozehřívačka', q:'Jak se jmenuje hlavní město Austrálie? (není to Sydney!)', a:'Canberra'},
-    {cat:'Rozehřívačka', q:'Který orgán lidského těla je svou plochou největší?', a:'Kůže'},
-    {cat:'Rozehřívačka', q:'Kolik planet má naše sluneční soustava, odkdy přišlo Pluto o status planety?', a:'8'},
+    {cat:'Lehké', q:'Kolik krajů má Česká republika?', a:'14'},
+    {cat:'Lehké', q:'Jaký je chemický vzorec vody?', a:'H₂O'},
+    {cat:'Lehké', q:'Kolik měsíců v roce má 31 dní?', a:'7'},
+    {cat:'Lehké', q:'Jak se jmenuje měna používaná ve Velké Británii?', a:'Libra šterlinků'},
 
-    {cat:'Zeměpis', q:'Která řeka protéká Prahou?', a:'Vltava'},
-    {cat:'Zeměpis', q:'Jak se jmenuje nejvyšší hora světa a kolik měří metrů?', a:'Mount Everest, 8 849 m'},
-    {cat:'Zeměpis · obrázek', q:'Kterou zemi reprezentuje tahle vlajka?', a:'Itálie', visual:{type:'flag', colors:['#13883f','#f5f5f0','#cc1126']}},
-    {cat:'Zeměpis', q:'Kolik států sousedí s Českou republikou?', a:'4 — Německo, Polsko, Slovensko, Rakousko'},
+    {cat:'Zeměpis', q:'Jak se jmenuje úžina oddělující Evropu od Afriky?', a:'Gibraltarský průliv'},
+    {cat:'Zeměpis', q:'Které město je hlavním městem Kanady? (není to Toronto!)', a:'Ottawa'},
+    {cat:'Zeměpis · obrázek', q:'Kterou zemi reprezentuje tahle vlajka?', a:'Belgie', visual:{type:'flag', colors:['#2d2926','#fcd116','#ef3340']}},
+    {cat:'Zeměpis', q:'Kolik časových pásem má Rusko?', a:'11'},
 
-    {cat:'Historie', q:'V jakém roce skončila druhá světová válka?', a:'1945'},
-    {cat:'Historie', q:'Kdo byl prvním československým prezidentem?', a:'Tomáš Garrigue Masaryk'},
-    {cat:'Historie', q:'V jakém roce se rozdělilo Československo na Českou a Slovenskou republiku?', a:'1993'},
-    {cat:'Historie', q:'Jak se jmenovala první žena ve vesmíru?', a:'Valentina Těreškovová (1963)'},
+    {cat:'Historie', q:'V jakém roce byla podepsána Magna Carta (Velká listina svobod)?', a:'1215'},
+    {cat:'Historie', q:'Kolik let trvala stoletá válka mezi Anglií a Francií?', a:'116 let (1337–1453)'},
+    {cat:'Historie', q:'Který český král nechal postavit Karlův most a stal se římským císařem?', a:'Karel IV.'},
+    {cat:'Historie', q:'V jakém roce vypukla první světová válka?', a:'1914'},
 
-    {cat:'Příroda · obrázek', q:'Jaké zvíře je na obrázku a kolika let se v průměru dožívá?', a:'Želva — některé druhy se dožívají přes 100 let', visual:{type:'emoji', value:'🐢'}},
-    {cat:'Příroda', q:'Které zvíře je podle hmotnosti největší na světě?', a:'Plejtvák obrovský (modrá velryba)'},
-    {cat:'Příroda', q:'Kolik srdcí má chobotnice?', a:'3'},
+    {cat:'Příroda · obrázek', q:'Jak dlouho trvá zimní spánek tohoto zvířete?', a:'Ježek — cca 5–6 měsíců', visual:{type:'emoji', value:'🦔'}},
+    {cat:'Příroda', q:'Který savec vydrží nejdéle bez vody?', a:'Velbloud — i přes týden'},
+    {cat:'Příroda', q:'Kolik komor má srdce žáby?', a:'3'},
 
-    {cat:'Kultura', q:'Kolik celovečerních filmů má filmová série Harry Potter?', a:'8'},
-    {cat:'Kultura · obrázek', q:'Který film skrývají tahle tři emoji?', a:'Lví král', visual:{type:'emoji', value:'🦁👑🌍'}},
-    {cat:'Kultura', q:'Kdo namaloval obraz Mona Lisa?', a:'Leonardo da Vinci'},
+    {cat:'Kultura', q:'Kdo složil operu Prodaná nevěsta?', a:'Bedřich Smetana'},
+    {cat:'Kultura · obrázek', q:'Kterého hrdinu skrývají tahle emoji?', a:'Spider-Man / Pavouk', visual:{type:'emoji', value:'🕷️🕸️🧑'}},
+    {cat:'Kultura', q:'Ve kterém roce vznikl film Casablanca?', a:'1942'},
   ];
 
-  const STORAGE_KEY = 'rodinny-kviz-v1';
+  const STORAGE_KEY = 'rodinny-kviz-v2';
   let state = {teams: [], scores: [], current: 0, revealed: false, started: false};
 
   function load(){
@@ -219,6 +220,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const award = document.getElementById('award');
   const podium = document.getElementById('podium');
   const restartBtn = document.getElementById('restartBtn');
+  const restartGameBtn = document.getElementById('restartGameBtn');
 
   const DEFAULT_NAMES = ['Tým Babička', 'Tým Dědeček'];
 
@@ -363,7 +365,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     save();
   }
 
-  restartBtn.addEventListener('click', () => {
+  function restartGame(){
     state.scores = state.teams.map(() => 0);
     state.current = 0;
     state.revealed = false;
@@ -373,7 +375,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     scorebar.hidden = false;
     renderScorebar();
     renderQuestion();
-  });
+  }
+
+  restartBtn.addEventListener('click', restartGame);
+  restartGameBtn.addEventListener('click', restartGame);
 
   startBtn.addEventListener('click', () => {
     state.teams = state.teams.map((n, i) => (n && n.trim()) || ('Tým ' + (i + 1)));
