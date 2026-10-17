@@ -154,6 +154,10 @@
     <div class="visual" id="visual" hidden></div>
 
     <div class="guessbox" id="guessbox" hidden>
+      <div class="guess-row" id="liveAnswerRow" hidden>
+        <span class="gnm">Skutečný počet (zjisti teď v místnosti):</span>
+        <input type="number" id="liveAnswerInput" placeholder="skutečná hodnota">
+      </div>
       <p class="hint" style="margin:0 0 8px;">Admin zadá odhad každého týmu (řekli ho nahlas / mají na papíře):</p>
       <div class="guesslist" id="guesslist"></div>
       <button class="primary small" id="evalBtn" type="button">Vyhodnotit, kdo byl nejblíž →</button>
@@ -417,7 +421,7 @@
       head.appendChild(badge); head.appendChild(swapBtn);
       const qEl = document.createElement('p'); qEl.className = 'pq'; qEl.textContent = q.q;
       const aEl = document.createElement('p'); aEl.className = 'pa';
-      aEl.textContent = q.type === 'guess' ? (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit)) : q.a;
+      aEl.textContent = q.type === 'guess' ? (q.live ? '(zjistí se naživo na místě)' : (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit))) : q.a;
       row.appendChild(head); row.appendChild(qEl); row.appendChild(aEl);
       if(q.fact){
         const fEl = document.createElement('p'); fEl.className = 'pf'; fEl.textContent = '💡 ' + q.fact;
@@ -451,6 +455,8 @@
   const guessbox = document.getElementById('guessbox');
   const guesslist = document.getElementById('guesslist');
   const evalBtn = document.getElementById('evalBtn');
+  const liveAnswerRow = document.getElementById('liveAnswerRow');
+  const liveAnswerInput = document.getElementById('liveAnswerInput');
   const podium = document.getElementById('podium');
   const restartBtn = document.getElementById('restartBtn');
   const restartGameBtn = document.getElementById('restartGameBtn');
@@ -621,6 +627,13 @@
 
   function evaluateGuesses(){
     const q = state.questions[state.current];
+    if(q.live){
+      const liveVal = parseFloat(liveAnswerInput.value);
+      if(isNaN(liveVal)) { liveAnswerInput.focus(); return; }
+      q.a = liveVal;
+      q.display = liveVal.toLocaleString('cs-CZ') + ' ' + (q.unit || '');
+      answertext.textContent = q.display;
+    }
     const diffs = state.teams.map((_, i) => {
       const el = document.getElementById('guess-input-' + i);
       return el ? guessDiff(q, el.value) : Infinity;
@@ -663,7 +676,7 @@
     progress.textContent = 'Otázka ' + (state.current + 1) + ' / ' + state.questions.length;
     qtext.textContent = q.q;
     buildVisual(q.visual);
-    answertext.textContent = isGuess ? (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit)) : q.a;
+    answertext.textContent = isGuess ? (q.live ? '(zjistí se naživo)' : (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit))) : q.a;
     facttext.textContent = q.fact || '';
     if(q.src){
       srcline.innerHTML = 'Zdroj: <a href="' + q.src + '" target="_blank" rel="noopener">' + (q.srcName || q.src.replace(/^https?:\/\//, '').split('/')[0]) + '</a>';
@@ -694,6 +707,8 @@
     award.hidden = isGuess || !state.revealed;
     if(isGuess){
       buildGuessInputs();
+      liveAnswerRow.hidden = !q.live;
+      liveAnswerInput.value = '';
       evalBtn.disabled = false;
       answerbox.classList.toggle('show', state.revealed);
       factbox.classList.toggle('show', state.revealed && !!q.fact);

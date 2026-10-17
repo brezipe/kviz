@@ -115,7 +115,7 @@
   const SECTION_LABELS = {leh:'Lehké', str:'Střední', tez:'Těžké', exp:'Expert', guess:'Hádej číslo / datum'};
 
   function answerText(q){
-    if(q.type === 'guess') return q.display || (q.a.toLocaleString('cs-CZ') + ' ' + (q.unit || ''));
+    if(q.type === 'guess') return q.live ? '(zjistí se naživo na místě)' : (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + (q.unit || '')));
     if(q.type === 'choice' ) return q.a;
     return q.a;
   }
