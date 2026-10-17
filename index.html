@@ -111,6 +111,27 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .slugnote .hint{margin:0;}
 .slugnote a{display:inline-block; margin-top:6px;}
 
+.history-wrap{max-width:760px;}
+.history-summary{cursor:pointer; font-weight:700; color:var(--accent); padding:4px 2px;}
+.history-card{margin-top:8px;}
+.hist-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--line);}
+.hist-row:first-child{border-top:none;}
+.hist-q{flex:1 1 220px; min-width:0; font-size:.88rem; color:var(--fg);}
+.hist-q .cat{color:var(--muted); font-size:.78rem; display:block;}
+.hist-adjust{display:flex; align-items:center; gap:4px; background:var(--surface2); border-radius:999px; padding:4px 10px; font-size:.82rem;}
+.hist-adjust .nm{font-weight:700; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.hist-adjust button{padding:2px 9px; border-radius:999px; font-weight:700; line-height:1.4;}
+.hist-adjust .val{min-width:1.4em; text-align:center; font-family:'JetBrains Mono',ui-monospace,monospace;}
+
+.preview-row{padding:12px 0; border-top:1px solid var(--line);}
+.preview-row:first-child{border-top:none;}
+.preview-row .phead{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:3px;}
+.preview-row .pbadge{font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted);}
+.preview-row .pswap{flex:none; padding:4px 10px; font-size:.78rem;}
+.preview-row .pq{font-weight:700; margin:0 0 3px;}
+.preview-row .pa{color:var(--accent); font-weight:700; margin:0 0 3px; font-size:.92rem;}
+.preview-row .pf{color:var(--muted); font-size:.85rem; margin:0;}
+
 .podium{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
 .prow{display:flex; align-items:center; gap:14px; background:var(--surface2); border-radius:12px; padding:14px 16px;}
 .prow.win{background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, var(--surface2)), var(--surface2)); border:1px solid var(--accent);}
@@ -129,7 +150,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 <div class="wrap">
   <div class="topline">
     <div>
-      <h1 class="title">🍺 Rodinný kvíz</h1>
+      <h1 class="title">⭕❌ Rodinný kvíz</h1>
       <p class="sub">Hospodská soutěž pro celou rodinu — týmy po 4–6 lidech · databáze 200 otázek</p>
     </div>
   </div>
@@ -191,10 +212,24 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       <input type="text" id="slugUrl" readonly>
       <button class="small" id="slugCopy" type="button">Kopírovat</button>
     </div>
+
+    <div class="preview" id="preview" hidden>
+      <p class="hint" id="previewSummary" style="margin:16px 0 8px;"></p>
+      <div id="previewList"></div>
+    </div>
   </details>
 </div>
 
 <div class="scorebar" id="scorebar" hidden></div>
+
+<details class="wrap history-wrap" id="historyWrap" hidden>
+  <summary class="history-summary">📜 Historie bodování (vrátit zpět / opravit)</summary>
+  <div class="card history-card">
+    <p class="hint" style="margin:0 0 10px;">Ke každé otázce, co se bodovala — tlačítky uprav skóre, pokud se admin někde uklikl.</p>
+    <div id="historyList"></div>
+    <p class="hint" id="historyEmpty">Zatím nic nebodováno.</p>
+  </div>
+</details>
 
 <div class="wrap" id="game" hidden>
   <div class="card">
@@ -491,29 +526,40 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   ];
 
   // Obyčejné míchání (nová hra pokaždé jinak) i seedované (pro odkaz s konkrétní sadou — stejný seed = stejné otázky pokaždé).
-  function mulberry32(seed){
-    return function(){
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function shuffle(arr, rng){
-    rng = rng || Math.random;
+  function shuffle(arr){
     const a = arr.slice();
     for(let i = a.length - 1; i > 0; i--){
-      const j = Math.floor(rng() * (i + 1));
+      const j = Math.floor(Math.random() * (i + 1));
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
   }
 
-  // opts: {tiers:['leh','str',...], seed:number|null, guessCount:number}
+  // Každá otázka má stabilní ID "tier_index" (index v BANK[tier] / GUESS_BANK) —
+  // díky tomu jde přesný seznam otázek (i po ručních výměnách v náhledu) uložit
+  // do odkazu jako prostý seznam ID, místo spoléhání na náhodné "seed".
+  // Krátký kód pro otázku (písmeno obtížnosti + index v base36) — ať je
+  // výsledné ID celého kvízu co nejkratší na zkopírování/sdílení.
+  const TIER_CODE = {leh:'l', str:'s', tez:'t', exp:'e', guess:'g'};
+  const CODE_TIER = {l:'leh', s:'str', t:'tez', e:'exp', g:'guess'};
+
+  function makeId(tier, idx){ return TIER_CODE[tier] + idx.toString(36); }
+
+  function resolveId(code){
+    const tier = CODE_TIER[code[0]];
+    const idx = parseInt(code.slice(1), 36);
+    if(!tier || isNaN(idx)) return null;
+    if(tier === 'guess'){
+      const q = GUESS_BANK[idx];
+      return q ? Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess', _id: code}, q) : null;
+    }
+    const q = BANK[tier] && BANK[tier][idx];
+    return q ? Object.assign({cat: TIER_LABELS[tier], tier, _id: code}, q) : null;
+  }
+
+  // opts: {tiers:['leh','str',...], guessCount:number}
   function pickQuestions(n, opts){
     opts = opts || {};
-    const rng = (opts.seed != null) ? mulberry32(opts.seed) : Math.random;
     const activeTiers = (opts.tiers && opts.tiers.length) ? opts.tiers : TIER_ORDER;
     const totalAvail = activeTiers.reduce((s, t) => s + BANK[t].length, 0);
     n = Math.max(activeTiers.length, Math.min(n, totalAvail));
@@ -527,43 +573,52 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     }
     let out = [];
     TIER_ORDER.filter(t => activeTiers.includes(t)).forEach(t => {
-      const picked = shuffle(BANK[t], rng).slice(0, Math.min(counts[t], BANK[t].length));
-      picked.forEach(q => out.push(Object.assign({cat: TIER_LABELS[t], tier: t}, q)));
+      const order = shuffle(BANK[t].map((_, idx) => idx)).slice(0, Math.min(counts[t], BANK[t].length));
+      order.forEach(idx => out.push(Object.assign({cat: TIER_LABELS[t], tier: t, _id: makeId(t, idx)}, BANK[t][idx])));
     });
     const guessCount = Math.min(opts.guessCount != null ? opts.guessCount : 6, GUESS_BANK.length);
     if(guessCount > 0){
-      shuffle(GUESS_BANK, rng).slice(0, guessCount).forEach(q => {
-        out.push(Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess'}, q));
-      });
+      const order = shuffle(GUESS_BANK.map((_, idx) => idx)).slice(0, guessCount);
+      order.forEach(idx => out.push(Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess', _id: makeId('guess', idx)}, GUESS_BANK[idx])));
     }
     return out;
   }
 
-  // ── Odkaz na konkrétní sadu (slug v URL) ──────────────────────────────────
-  function parseSlug(){
-    const params = new URLSearchParams(location.search);
-    const seed = params.get('seed');
-    if(seed === null) return null;
-    const tiers = (params.get('tiers') || 'leh,str,tez,exp').split(',').filter(t => TIER_ORDER.includes(t));
-    const n = parseInt(params.get('n'), 10) || 20;
-    const guessCount = params.has('guess') ? parseInt(params.get('guess'), 10) || 0 : 6;
-    return {seed: parseInt(seed, 10) || 0, tiers: tiers.length ? tiers : TIER_ORDER, n, guessCount};
+  function swapQuestion(list, rowIndex){
+    const q = list[rowIndex];
+    const pool = q.tier === 'guess' ? GUESS_BANK : BANK[q.tier];
+    const usedIds = new Set(list.map(x => x._id));
+    const candidates = pool.map((_, idx) => idx).filter(idx => !usedIds.has(makeId(q.tier, idx)));
+    if(!candidates.length) return list; // nic jiného k výměně není
+    const idx = candidates[Math.floor(Math.random() * candidates.length)];
+    const fresh = q.tier === 'guess'
+      ? Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess', _id: makeId('guess', idx)}, GUESS_BANK[idx])
+      : Object.assign({cat: TIER_LABELS[q.tier], tier: q.tier, _id: makeId(q.tier, idx)}, BANK[q.tier][idx]);
+    const next = list.slice();
+    next[rowIndex] = fresh;
+    return next;
   }
 
-  function buildSlugUrl(cfg){
+  // ── Odkaz na konkrétní sadu (slug v URL) — přesný seznam ID otázek ──────────
+  function parseSlug(){
+    const params = new URLSearchParams(location.search);
+    const idParam = params.get('id');
+    if(!idParam) return null;
+    const questions = idParam.split('.').map(resolveId).filter(Boolean);
+    return questions.length ? {questions} : null;
+  }
+
+  function buildSlugUrl(questions){
     const url = new URL(location.href);
     url.search = '';
-    url.searchParams.set('seed', cfg.seed);
-    url.searchParams.set('tiers', cfg.tiers.join(','));
-    url.searchParams.set('n', cfg.n);
-    url.searchParams.set('guess', cfg.guessCount);
+    url.searchParams.set('id', questions.map(q => q._id).join('.'));
     return url.toString();
   }
 
   const activeSlug = parseSlug();
 
   const STORAGE_KEY = 'rodinny-kviz-v3';
-  let state = {teams: [], scores: [], questions: [], current: 0, revealed: false, started: false, qcount: 20};
+  let state = {teams: [], scores: [], questions: [], current: 0, revealed: false, started: false, qcount: 20, history: []};
 
   function load(){
     try{
@@ -592,11 +647,46 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const slugResult = document.getElementById('slugResult');
   const slugUrl = document.getElementById('slugUrl');
   const slugCopy = document.getElementById('slugCopy');
+  const preview = document.getElementById('preview');
+  const previewSummary = document.getElementById('previewSummary');
+  const previewList = document.getElementById('previewList');
+
+  function renderPreview(questions){
+    previewSummary.textContent = 'Náhled — ' + questions.length + ' otázek v pořadí, jak přijdou na řadu. Nelíbí se ti některá? Vyměň ji:';
+    previewList.innerHTML = '';
+    questions.forEach((q, i) => {
+      const row = document.createElement('div');
+      row.className = 'preview-row';
+      const head = document.createElement('div'); head.className = 'phead';
+      const badge = document.createElement('span'); badge.className = 'pbadge'; badge.textContent = (i + 1) + '. ' + q.cat;
+      const swapBtn = document.createElement('button');
+      swapBtn.type = 'button'; swapBtn.className = 'small ghost pswap'; swapBtn.textContent = '🔄 Vyměnit';
+      swapBtn.addEventListener('click', () => {
+        previewQuestions = swapQuestion(previewQuestions, i);
+        refreshSlugFromPreview();
+        renderPreview(previewQuestions);
+      });
+      head.appendChild(badge); head.appendChild(swapBtn);
+      const qEl = document.createElement('p'); qEl.className = 'pq'; qEl.textContent = q.q;
+      const aEl = document.createElement('p'); aEl.className = 'pa';
+      aEl.textContent = q.type === 'guess' ? (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit)) : q.a;
+      row.appendChild(head); row.appendChild(qEl); row.appendChild(aEl);
+      if(q.fact){
+        const fEl = document.createElement('p'); fEl.className = 'pf'; fEl.textContent = '💡 ' + q.fact;
+        row.appendChild(fEl);
+      }
+      previewList.appendChild(row);
+    });
+    preview.hidden = false;
+  }
   const startBtn = document.getElementById('startBtn');
   const setupEl = document.getElementById('setup');
   const gameEl = document.getElementById('game');
   const resultsEl = document.getElementById('results');
   const scorebar = document.getElementById('scorebar');
+  const historyWrap = document.getElementById('historyWrap');
+  const historyList = document.getElementById('historyList');
+  const historyEmpty = document.getElementById('historyEmpty');
   const catBadge = document.getElementById('catBadge');
   const progress = document.getElementById('progress');
   const qtext = document.getElementById('qtext');
@@ -694,18 +784,55 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     }
   }
 
+  function adjustScore(i, delta){
+    state.scores[i] = Math.max(0, (state.scores[i] || 0) + delta);
+    save();
+    renderScorebar();
+  }
+
+  function logHistory(cat, text){
+    state.history.unshift({id: Date.now() + '_' + Math.random(), cat, text});
+    save();
+    renderHistory();
+  }
+
+  function renderHistory(){
+    historyList.innerHTML = '';
+    historyEmpty.hidden = state.history.length > 0;
+    state.history.forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'hist-row';
+      const q = document.createElement('div'); q.className = 'hist-q';
+      const catSpan = document.createElement('span'); catSpan.className = 'cat'; catSpan.textContent = entry.cat;
+      q.appendChild(catSpan);
+      q.appendChild(document.createTextNode(entry.text));
+      row.appendChild(q);
+      state.teams.forEach((name, i) => {
+        const chip = document.createElement('span'); chip.className = 'hist-adjust';
+        const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name || ('Tým ' + (i+1));
+        const minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−';
+        minus.addEventListener('click', () => adjustScore(i, -1));
+        const plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+';
+        plus.addEventListener('click', () => adjustScore(i, 1));
+        chip.appendChild(nm); chip.appendChild(minus); chip.appendChild(plus);
+        row.appendChild(chip);
+      });
+      historyList.appendChild(row);
+    });
+  }
+
   function renderAward(){
     award.innerHTML = '';
     if(!state.revealed){ award.hidden = true; return; }
     award.hidden = false;
+    const q = state.questions[state.current];
     state.teams.forEach((name, i) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'small';
       b.innerHTML = '+1 bod — ' + (name || ('Tým ' + (i+1)));
       b.addEventListener('click', () => {
-        state.scores[i] = (state.scores[i] || 0) + 1;
-        save();
-        renderScorebar();
+        adjustScore(i, 1);
+        logHistory(q.cat, q.q + ' → +1 ' + (name || ('Tým ' + (i+1))));
       });
       award.appendChild(b);
     });
@@ -745,6 +872,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     });
     const minDiff = Math.min(...diffs);
     if(minDiff === Infinity) return; // nikdo nic nezadal
+    const winners = [];
     diffs.forEach((d, i) => {
       const row = document.getElementById('guess-row-' + i);
       const input = document.getElementById('guess-input-' + i);
@@ -754,8 +882,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
         const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '🏆 Nejblíž';
         if(row) row.appendChild(tag);
         state.scores[i] = (state.scores[i] || 0) + 1;
+        winners.push(state.teams[i] || ('Tým ' + (i+1)));
       }
     });
+    logHistory(q.cat, q.q + ' → +1 ' + winners.join(', ') + ' (nejblíž)');
     evalBtn.disabled = true;
     state.revealed = true;
     save();
@@ -838,9 +968,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   }
 
   function pickForGame(){
-    if(activeSlug){
-      return pickQuestions(activeSlug.n, {tiers: activeSlug.tiers, seed: activeSlug.seed, guessCount: activeSlug.guessCount});
-    }
+    if(activeSlug) return activeSlug.questions;
     return pickQuestions(state.qcount);
   }
 
@@ -849,11 +977,14 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     state.scores = state.teams.map(() => 0);
     state.current = 0;
     state.revealed = false;
+    state.history = [];
     save();
     resultsEl.hidden = true;
     gameEl.hidden = false;
     scorebar.hidden = false;
+    historyWrap.hidden = false;
     renderScorebar();
+    renderHistory();
     renderQuestion();
   }
 
@@ -884,16 +1015,28 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     state.current = 0;
     state.revealed = false;
     state.started = true;
+    state.history = [];
     save();
     setupEl.hidden = true;
     scorebar.hidden = false;
+    historyWrap.hidden = false;
     gameEl.hidden = false;
     renderScorebar();
+    renderHistory();
     renderQuestion();
   });
 
-  function tierSummary(tiers){
-    return tiers.map(t => TIER_LABELS[t]).join(', ');
+  function tierSummary(questions){
+    const counts = {};
+    questions.forEach(q => { counts[q.cat] = (counts[q.cat] || 0) + 1; });
+    return Object.keys(counts).map(cat => cat + ' (' + counts[cat] + ')').join(', ');
+  }
+
+  let previewQuestions = [];
+
+  function refreshSlugFromPreview(){
+    slugUrl.value = buildSlugUrl(previewQuestions);
+    slugResult.hidden = false;
   }
 
   function wireAdminPanel(){
@@ -904,15 +1047,12 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
         slugResult.hidden = false;
         return;
       }
-      const cfg = {
-        seed: Math.floor(Math.random() * 1e9),
-        tiers,
-        n: Math.max(4, Math.min(parseInt(adminN.value, 10) || 20, 64)),
-        guessCount: adminGuessOn.checked ? Math.max(0, Math.min(parseInt(adminGuessN.value, 10) || 0, 12)) : 0,
-      };
-      slugUrl.value = buildSlugUrl(cfg);
-      slugResult.hidden = false;
+      const n = Math.max(4, Math.min(parseInt(adminN.value, 10) || 20, 64));
+      const guessCount = adminGuessOn.checked ? Math.max(0, Math.min(parseInt(adminGuessN.value, 10) || 0, 12)) : 0;
+      previewQuestions = pickQuestions(n, {tiers, guessCount});
+      refreshSlugFromPreview();
       slugUrl.select();
+      renderPreview(previewQuestions);
     });
     slugCopy.addEventListener('click', () => {
       slugUrl.select();
@@ -926,14 +1066,14 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     if(!activeSlug) return;
     qcountField.hidden = true;
     slugnote.hidden = false;
-    const guessPart = activeSlug.guessCount > 0 ? (' + bonus Hádej číslo (' + activeSlug.guessCount + ')') : '';
-    slugnoteText.textContent = 'Přednastavená sada: ' + activeSlug.n + ' otázek · ' + tierSummary(activeSlug.tiers) + guessPart + '.';
+    slugnoteText.textContent = 'Přednastavená sada: ' + activeSlug.questions.length + ' otázek · ' + tierSummary(activeSlug.questions) + '.';
   }
 
   function boot(){
     load();
     if(!state.teams.length) state.teams = DEFAULT_NAMES.slice();
     if(!state.scores.length) state.scores = state.teams.map(() => 0);
+    if(!state.history) state.history = [];
     renderTeamInputs();
     if(state.teams.length >= 6) addTeamBtn.disabled = true;
     qcountInput.value = state.qcount || 20;
@@ -943,13 +1083,17 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     if(state.started && state.questions.length && state.current < state.questions.length){
       setupEl.hidden = true;
       scorebar.hidden = false;
+      historyWrap.hidden = false;
       gameEl.hidden = false;
       renderScorebar();
+      renderHistory();
       renderQuestion();
     } else if(state.started && state.questions.length){
       setupEl.hidden = true;
       scorebar.hidden = false;
+      historyWrap.hidden = false;
       renderScorebar();
+      renderHistory();
       showResults();
     }
   }
