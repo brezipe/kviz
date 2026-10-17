@@ -39,7 +39,7 @@ h1,h2,h3,.chalk{font-family:'Permanent Marker','Kalam',system-ui,cursive; font-w
 
 .team-row{display:flex; align-items:center; gap:10px;}
 .team-row input{flex:1; min-width:0;}
-input[type=text],input[type=number]{
+input[type=text],input[type=number],input[type=password]{
   background:var(--surface2); color:var(--fg); border:1px solid var(--line); border-radius:10px;
   padding:11px 13px; font:inherit; font-size:1rem; width:100%;
 }
@@ -89,6 +89,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .factbox.show{display:block;}
 .factbox .lbl{text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--fact);}
 .factbox p{margin:4px 0 0; font-size:.95rem; line-height:1.5;}
+.srcline{margin-top:8px!important; font-size:.78rem!important; color:var(--muted);}
+.srcline a{color:var(--fact);}
 .award{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
 .award button{display:flex; align-items:center; gap:7px;}
 .navrow{display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:10px; flex-wrap:wrap;}
@@ -187,6 +189,17 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     </div>
   </div>
 
+  <div class="card admin-lock" id="adminLock">
+    <p class="hint" style="margin:0 0 10px;">🔒 Nástroje pro organizátora (příprava sady, bonus písnička) jsou schované za PINem, ať do nich diváci omylem nekliknou.</p>
+    <div class="btnrow">
+      <input type="password" id="adminPin" inputmode="numeric" maxlength="4" placeholder="PIN" style="max-width:110px;">
+      <button class="primary" id="adminUnlockBtn" type="button">Odemknout</button>
+    </div>
+    <p class="hint" id="adminPinError" style="color:var(--accent); display:none; margin-top:8px;">Špatný PIN.</p>
+  </div>
+
+  <div id="adminTools" hidden>
+
   <details class="card admin-card">
     <summary>🛠️ Pro organizátora — připravit konkrétní sadu otázek</summary>
     <p class="hint" style="margin-top:10px;">Vyber obtížnosti a počet otázek, vygeneruj odkaz a ulož si ho — kdykoliv ho otevřeš, dostaneš přesně tuhle stejnou sadu (nehraje se náhodně jako normálně).</p>
@@ -248,6 +261,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       <button class="ghost" id="songReversedStop" type="button">⏹ Stop</button>
     </div>
   </details>
+
+  </div>
 </div>
 
 <div class="scorebar" id="scorebar" hidden></div>
@@ -290,6 +305,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     <div class="factbox" id="factbox">
       <div class="lbl">💡 Zajímavost</div>
       <p id="facttext"></p>
+      <p class="srcline" id="srcline" hidden></p>
     </div>
 
     <div class="award" id="award" hidden></div>
@@ -332,6 +348,9 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Kdo byl prvním československým prezidentem?', a:'Tomáš Garrigue Masaryk', fact:'Ve funkci byl od vzniku státu v roce 1918 až do roku 1935.'},
       {q:'Jak se jmenovala první žena ve vesmíru?', a:'Valentina Těreškovová', fact:'Letěla v roce 1963 na sovětské lodi Vostok 6.'},
       {q:'Které zvíře je podle hmotnosti největší na světě?', a:'Plejtvák obrovský (modrá velryba)', fact:'Může vážit přes 150 tun, tedy víc než 30 dospělých slonů dohromady.'},
+      {q:'Jak se jmenuje strom, který je aktuálně nejvyšším žijícím stromem na světě?', a:'Hyperion (sekvoj vždyzelená)', fact:'Měří přes 115 metrů a roste v Kalifornii — jeho přesná poloha se kvůli ochraně tají.', src:'https://now.humboldt.edu/news/hsu-prof-confirms-worlds-tallest-tree', srcName:'Cal Poly Humboldt'},
+      {q:'Která rostlina je považována za suchozemsky nejrychleji rostoucí na světě?', a:'Bambus', fact:'Některé druhy dorostou až 91 centimetrů za jediný den.', src:'https://www.guinnessworldrecords.com/world-records/fastest-growing-plant', srcName:'Guinness World Records'},
+      {q:'Která budova je aktuálně nejvyšší v České republice?', a:'AZ Tower v Brně', fact:'Měří 111 metrů a je o dva metry vyšší než pražský City Tower na Pankráci.', src:'https://ct24.ceskatelevize.cz/clanek/regiony/brnenska-vez-prevzala-zezlo-nejvyssi-budovy-v-cr-301961', srcName:'ČT24'},
       {q:'Kolik srdcí má chobotnice?', a:'3', fact:'Dvě srdce pumpují krev přes žábry, jedno pak zásobuje zbytek těla.'},
       {q:'Který savec vydrží nejdéle bez jídla a pití?', a:'Velbloud', fact:'Díky tukovým zásobám v hrbu vydrží i víc než týden bez vody.'},
       {q:'Kolik zubů má dospělý člověk včetně moudráků?', a:'32', fact:'Bez moudráků je to 28 — ty bývají poslední, které prorazí, často až po dvacítce.'},
@@ -385,6 +404,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Kolik planet sluneční soustavy má kolem sebe prstence?', a:'4 — Jupiter, Saturn, Uran, Neptun', fact:'Saturnovy prstence jsou nejnápadnější a dobře viditelné i malým dalekohledem.'},
       {q:'Jak se jmenuje hlavní město Řecka?', a:'Athény', fact:'Patří mezi nejstarší nepřetržitě obydlená města světa — přes 3000 let.'},
       {q:'Jak se jmenuje nejrychlejší komerčně provozovaný vlak na světě (typ maglev) v Šanghaji?', a:'Šanghajský Transrapid', fact:'Dosahuje rychlosti přes 400 km/h a jede na magnetickém polštáři bez kontaktu s kolejnicemi.'},
+      {q:'Kolik zlatých olympijských medailí celkem vyhrál americký plavec Michael Phelps, nejúspěšnější olympionik historie?', a:'23', fact:'Dohromady má 28 olympijských medailí — i to je rekord.', src:'https://en.wikipedia.org/wiki/Michael_Phelps', srcName:'Wikipedia'},
+      {q:'Která země je podle rozlohy největší na světě?', a:'Rusko', fact:'Má rozlohu přes 17 milionů km², což je asi 11 % veškeré souše planety.', src:'https://www.worldatlas.com/articles/the-largest-countries-in-the-world-the-biggest-nations-as-determined-by-total-land-area.html', srcName:'WorldAtlas'},
+      {q:'Jak se jmenovala první umělá družice vypuštěná do vesmíru?', a:'Sputnik 1', fact:'Vypustil ji Sovětský svaz 4. října 1957 a vysílala signál ještě tři týdny, než jí došly baterie.', src:'https://en.wikipedia.org/wiki/Sputnik_1', srcName:'Wikipedia'},
+      {q:'Který hlodavec je největší na světě?', a:'Kapybara', fact:'Může vážit přes 60 kg, výjimečně i přes 100 kg.', src:'https://www.guinnessworldrecords.com/world-records/70407-largest-rodent', srcName:'Guinness World Records'},
       {q:'Který z těchto skladatelů byl Čech?', type:'choice', options:['Wolfgang Amadeus Mozart','Antonín Dvořák','Ludwig van Beethoven','Johann Sebastian Bach'], correctIndex:1, a:'B) Antonín Dvořák', fact:'Dvořák je jeden z nejhranějších českých skladatelů na světě, proslavila ho hlavně Symfonie č. 9 Z nového světa.'},
     ],
     str: [
@@ -439,11 +462,16 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Který italský stát leží celý uvnitř hranic Říma?', a:'Vatikán', fact:'Je to nejmenší stát světa, sídlo papeže a římskokatolické církve.'},
       {q:'Jak se jmenuje mořský průliv oddělující Asii od Severní Ameriky?', a:'Beringův průliv', fact:'V nejužším místě měří jen asi 82 km a v zimě občas částečně zamrzá.'},
       {q:'Kdo složil operu Kouzelná flétna?', a:'Wolfgang Amadeus Mozart', fact:'Premiéru měla jen pár měsíců před Mozartovou smrtí v roce 1791.'},
+      {q:'Která země jako první na světě umožnila ženám volit ve všeobecných parlamentních volbách?', a:'Nový Zéland', fact:'Stalo se tak v roce 1893 — zákon podepsal guvernér lord Glasgow 19. září.', src:'https://nzhistory.govt.nz/keyword/suffrage', srcName:'NZHistory.govt.nz'},
+      {q:'Které je největší jezero na světě podle rozlohy?', a:'Kaspické moře', fact:'Má rozlohu kolem 386 000 km² — i když je slané, geograficky jde o jezero, ne moře.', src:'https://www.guinnessworldrecords.com/world-records/66669-largest-lake', srcName:'Guinness World Records'},
       {q:'V jakém roce byl založen stát Izrael?', a:'1948', fact:'Vyhlášení nezávislosti vedlo bezprostředně k první arabsko-izraelské válce.'},
       {q:'Který vynálezce je nejčastěji spojován s vynálezem telefonu?', a:'Alexander Graham Bell', fact:'Patent získal v roce 1876, ačkoliv se o prvenství dodnes vedou historické spory.'},
       {q:'Jak se jmenuje buněčné dělení, při kterém vznikají pohlavní buňky s poloviční sadou chromozomů?', a:'Meióza', fact:'Na rozdíl od mitózy tak zajišťuje, že po oplodnění má nový jedinec normální počet chromozomů.'},
       {q:'Kde se nachází nejnižší místo na souši na Zemi?', a:'Břehy Mrtvého moře', fact:'Leží přes 430 metrů pod úrovní hladiny moře.'},
       {q:'Kdo namaloval obraz Hvězdná noc?', a:'Vincent van Gogh', fact:'Namaloval ho v roce 1889, přibližně rok před svou smrtí.'},
+      {q:'Který obraz je považován za nejdráže prodané umělecké dílo v historii?', a:'Salvator Mundi od Leonarda da Vinci', fact:'Vydražen byl v roce 2017 v aukční síni Christie\'s za 450,3 milionu dolarů.', src:'https://insights.masterworks.com/art/history/the-10-most-expensive-paintings-ever-sold/', srcName:'Masterworks'},
+      {q:'Kdo byla první žena, která přeletěla Atlantik sólo a bez mezipřistání?', a:'Amelia Earhartová', fact:'Stalo se tak v květnu 1932, letěla z Newfoundlandu a přistála v Severním Irsku.', src:'https://www.guinnessworldrecords.com/world-records/first-flight-across-the-atlantic-solo-(female)', srcName:'Guinness World Records'},
+      {q:'Který umělec má na kontě nejvíc cen Grammy v celé historii ocenění?', a:'Beyoncé', fact:'Má jich 35 — překonala rekord dirigenta Georga Soltiho, který jich měl 31.', src:'https://www.guinnessworldrecords.com/world-records/70115-most-grammy-awards-won-in-a-single-year-by-an-individual', srcName:'Guinness World Records'},
       {q:'Který je druhý nejvyšší vrchol světa?', a:'K2', fact:'Mezi horolezci je považován za technicky nejnáročnější a nejnebezpečnější z osmitisícovek.'},
       {q:'V jakém roce skončila válka ve Vietnamu?', a:'1975', fact:'Skončila pádem Saigonu a sjednocením Vietnamu pod komunistickou vládou.'},
       {q:'Který je nejstarší dosud žijící jednotlivý strom na světě?', a:'Borovice dlouhověká zvaná Methuselah', fact:'Odhaduje se, že je starší než 4800 let.'},
@@ -522,6 +550,9 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Jak se nazývá základní fyzikální zákon, podle kterého energie ani hmota nemohou vznikat ani zanikat, jen se přeměňovat?', a:'Zákon zachování energie', fact:'Patří mezi nejzákladnější a nejlépe ověřené zákony celé fyziky.'},
       {q:'Který hudební skladatel složil cyklus houslových koncertů Čtvero ročních období?', type:'choice', options:['Johann Sebastian Bach','Antonio Vivaldi','Georg Friedrich Händel','Joseph Haydn'], correctIndex:1, a:'B) Antonio Vivaldi', fact:'Vznikl kolem roku 1725 a patří mezi nejhranější barokní skladby vůbec.'},
       {q:'Kolik krčních obratlů má žirafa — stejně jako člověk?', type:'choice', options:['4','7','12','19'], correctIndex:1, a:'B) 7', fact:'Žirafí obratle jsou jen mnohem delší, počet je u většiny savců stejný.'},
+      {q:'Jak rychle jel nejrychlejší pozemní vůz v dějinách, britské auto Thrust SSC, při rekordní jízdě v roce 1997?', a:'1227,985 km/h', fact:'Je to jediné auto v historii, které na souši prolomilo rychlost zvuku — řídil ho Andy Green, bývalý stíhací pilot RAF.', src:'https://www.guinnessworldrecords.com/world-records/land-speed-(fastest-car)', srcName:'Guinness World Records'},
+      {q:'Který had je nejdelší jedovatý had světa?', a:'Král kobra (kobra královská)', fact:'Běžně měří 3 až 4 metry, rekordní zaznamenaný exemplář dosáhl 5,85 metru.', src:'https://en.wikipedia.org/wiki/King_cobra', srcName:'Wikipedia'},
+      {q:'Jak se jmenuje nejvyšší most na světě, stojící ve Francii nad údolím řeky Tarn?', a:'Viadukt Millau', fact:'Jeho nejvyšší pilíř měří 343 metrů — o 23 metrů víc, než je vysoká Eiffelova věž.', src:'https://www.amusingplanet.com/2012/03/millau-viaduct-france-tallest-bridge-in.html', srcName:'Amusing Planet'},
     ],
     exp: [
       {q:'Jak se jmenoval poslední jugoslávský král před nastolením komunismu?', a:'Petr II. Karađorđević', fact:'Po válce odešel do exilu a monarchie v Jugoslávii nebyla nikdy obnovena.'},
@@ -589,6 +620,13 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Který starověký řecký vynálezce zkonstruoval první známé zařízení poháněné párou?', a:'Hérón Alexandrijský', fact:'Jeho zařízení zvané aeolipile roztáčelo páru kouli, k praktickému využití páry ale došlo až o skoro dva tisíce let později.'},
       {q:'Který hudební skladatel je autorem operního cyklu Prsten Nibelungův, trvajícího přes 15 hodin?', type:'choice', options:['Giuseppe Verdi','Richard Wagner','Giacomo Puccini','Johannes Brahms'], correctIndex:1, a:'B) Richard Wagner', fact:'Na premiéru celého cyklu v Bayreuthu v roce 1876 přijel i německý císař Vilém I.'},
       {q:'Kolik strun má tradiční japonský strunný nástroj koto?', type:'choice', options:['6','13','21','25'], correctIndex:1, a:'B) 13', fact:'Koto je drnkací nástroj podobný citeře, hraje se na něj položený vodorovně na zemi.'},
+      {q:'Který organismus pokrývá největší souvislou plochu ze všech jednotlivých živých organismů na světě?', a:'Václavka (Armillaria) v Oregonu, USA', fact:'Zabírá plochu skoro 9,6 km² a odhaduje se, že je stará až 8650 let.', src:'https://www.discoverwildlife.com/plant-facts/biggest-organisms', srcName:'Discover Wildlife'},
+      {q:'Jak se jmenuje nejširší vodopád na světě, ležící na řece Mekong v Laosu?', a:'Khone Phapheng (Khone Falls)', fact:'Je široký přes 10 kilometrů, i když ve výšce měří jen 15 až 21 metrů.', src:'https://en.wikipedia.org/wiki/Khone_Phapheng_Falls', srcName:'Wikipedia'},
+      {q:'Kterou univerzitu uvádí Guinnessova kniha rekordů jako nejstarší nepřetržitě fungující vzdělávací instituci na světě?', a:'Univerzita Al-Karaouine ve Fezu (Maroko)', fact:'Založila ji v roce 859 žena jménem Fátima al-Fihrí jako mešitu se školou.', src:'https://en.wikipedia.org/wiki/List_of_oldest_universities_in_continuous_operation', srcName:'Wikipedia'},
+      {q:'Jak se jmenuje hora, která je po započtení své podmořské části ve skutečnosti vyšší než Mount Everest?', a:'Mauna Kea na Havaji', fact:'Nad hladinou moře měří jen 4205 m, ale od podmořské paty k vrcholu je to přes 10 000 metrů.', src:'https://en.wikipedia.org/wiki/Mauna_Kea', srcName:'Wikipedia'},
+      {q:'Které umělecké muzeum je podle celkové rozlohy budovy největší na světě?', a:'Louvre v Paříži', fact:'Celková plocha budovy činí 360 000 m² — je zároveň nejnavštěvovanějším muzeem světa.', src:'https://www.guinnessworldrecords.com/world-records/656406-largest-art-museum', srcName:'Guinness World Records'},
+      {q:'Jak se jmenuje nejdelší most na světě, postavený v Číně pro vysokorychlostní železnici?', a:'Viadukt Tan-jang–Kchun-šan (Danyang–Kunshan Grand Bridge)', fact:'Měří 164 kilometrů a spojuje Šanghaj s Nankingem.', src:'https://www.guinnessworldrecords.com/world-records/1/longest-bridge', srcName:'Guinness World Records'},
+      {q:'Který pavouk je podle hmotnosti největší na světě?', a:'Pavouk ptakožravý Goliáš (Goliath birdeater)', fact:'Může vážit přes 175 gramů — jméno "požírač ptáků" je ale trochu zavádějící, živí se hlavně hmyzem.', src:'https://www.nationalgeographic.com/animals/article/goliath-birdeater-tarantula-worlds-biggest-spider-science', srcName:'National Geographic'},
     ],
   };
 
@@ -728,7 +766,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 
   const activeSlug = parseSlug();
 
-  const STORAGE_KEY = 'rodinny-kviz-v4';
+  const STORAGE_KEY = 'rodinny-kviz-v5';
   let state = {teams: [], scores: [], questions: [], current: 0, revealed: false, started: false, qcount: 20, history: []};
 
   function load(){
@@ -763,6 +801,39 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const songReversedRow = document.getElementById('songReversedRow');
   const songReversedPlay = document.getElementById('songReversedPlay');
   const songReversedStop = document.getElementById('songReversedStop');
+  const adminLock = document.getElementById('adminLock');
+  const adminTools = document.getElementById('adminTools');
+  const adminPin = document.getElementById('adminPin');
+  const adminUnlockBtn = document.getElementById('adminUnlockBtn');
+  const adminPinError = document.getElementById('adminPinError');
+
+  // ── PIN zámek na nástroje pro organizátora ───────────────────────────────
+  const ADMIN_PIN = '5555';
+  const ADMIN_UNLOCK_KEY = 'rodinny-kviz-admin-unlocked';
+
+  function unlockAdmin(){
+    adminLock.hidden = true;
+    adminTools.hidden = false;
+    try{ localStorage.setItem(ADMIN_UNLOCK_KEY, '1'); }catch(e){}
+  }
+
+  function wireAdminLock(){
+    try{
+      if(localStorage.getItem(ADMIN_UNLOCK_KEY) === '1'){ unlockAdmin(); return; }
+    }catch(e){}
+    function tryUnlock(){
+      if(adminPin.value === ADMIN_PIN){
+        adminPinError.style.display = 'none';
+        unlockAdmin();
+      } else {
+        adminPinError.style.display = 'block';
+        adminPin.value = '';
+        adminPin.focus();
+      }
+    }
+    adminUnlockBtn.addEventListener('click', tryUnlock);
+    adminPin.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+  }
 
   // ── Bonus: zkomolená písnička — čistě lokálně v prohlížeči, nic se nenahrává ──
   function wireSongBonus(){
@@ -908,6 +979,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const answerbox = document.getElementById('answerbox');
   const answertext = document.getElementById('answertext');
   const factbox = document.getElementById('factbox');
+  const srcline = document.getElementById('srcline');
   const facttext = document.getElementById('facttext');
   const revealBtn = document.getElementById('revealBtn');
   const nextBtn = document.getElementById('nextBtn');
@@ -1127,6 +1199,12 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     buildVisual(q.visual);
     answertext.textContent = isGuess ? (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit)) : q.a;
     facttext.textContent = q.fact || '';
+    if(q.src){
+      srcline.innerHTML = 'Zdroj: <a href="' + q.src + '" target="_blank" rel="noopener">' + (q.srcName || q.src.replace(/^https?:\/\//, '').split('/')[0]) + '</a>';
+      srcline.hidden = false;
+    } else {
+      srcline.hidden = true;
+    }
 
     if(q.type === 'choice' && q.options){
       choices.hidden = false;
@@ -1312,6 +1390,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     if(state.teams.length >= 6) addTeamBtn.disabled = true;
     qcountInput.value = state.qcount || 20;
     wireAdminPanel();
+    wireAdminLock();
     wireSongBonus();
     applySlugUI();
 
