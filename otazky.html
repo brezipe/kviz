@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Přehled otázek — Rodinný kvíz</title>
+<meta name="description" content="Kompletní databáze otázek pro Rodinný kvíz — jen pro organizátora, chráněno PINem.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Figtree:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+.pagehead{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+.pagehead a.back{color:var(--muted); font-size:.9rem; text-decoration:none;}
+.pagehead a.back:hover{color:var(--accent);}
+.filterbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0;}
+.filterbar input[type=text]{flex:1; min-width:180px;}
+.filterbar select{background:var(--surface2); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:11px 13px; font:inherit;}
+.counts{color:var(--muted); font-size:.85rem; margin:0 0 10px;}
+.tier-section h2{margin:28px 0 4px; font-size:1.4rem;}
+.tier-section .n{color:var(--muted); font-size:.85rem; font-weight:400; margin-left:8px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="pagehead">
+    <div>
+      <h1 class="title" style="font-size:1.8rem;">📋 Přehled otázek</h1>
+      <p class="sub">Kompletní databáze — jen pro organizátora</p>
+    </div>
+    <a class="back" href="index.html">← Zpět na kvíz</a>
+  </div>
+</div>
+
+<div class="wrap" id="lockWrap">
+  <div class="card admin-lock" id="adminLock">
+    <p class="hint" style="margin:0 0 10px;">🔒 Tahle stránka ukazuje všechny otázky i s odpověďmi — zadej stejný PIN jako u nástrojů pro organizátora.</p>
+    <div class="btnrow">
+      <input type="password" id="adminPin" inputmode="numeric" maxlength="4" placeholder="PIN" style="max-width:110px;">
+      <button class="primary" id="adminUnlockBtn" type="button">Odemknout</button>
+    </div>
+    <p class="hint" id="adminPinError" style="color:var(--accent); display:none; margin-top:8px;">Špatný PIN.</p>
+  </div>
+</div>
+
+<div class="wrap" id="content" hidden>
+  <div class="card">
+    <div class="filterbar">
+      <input type="text" id="search" placeholder="Hledat v otázkách, odpovědích, zajímavostech…">
+      <select id="tierFilter">
+        <option value="">Všechny obtížnosti</option>
+        <option value="leh">Lehké</option>
+        <option value="str">Střední</option>
+        <option value="tez">Těžké</option>
+        <option value="exp">Expert</option>
+        <option value="guess">Hádej číslo/datum</option>
+      </select>
+    </div>
+    <p class="counts" id="counts"></p>
+  </div>
+
+  <div id="sections"></div>
+</div>
+
+<script src="questions.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const ADMIN_PIN = '5555';
+  const ADMIN_UNLOCK_KEY = 'rodinny-kviz-admin-unlocked';
+
+  const lockWrap = document.getElementById('lockWrap');
+  const adminLock = document.getElementById('adminLock');
+  const content = document.getElementById('content');
+  const adminPin = document.getElementById('adminPin');
+  const adminUnlockBtn = document.getElementById('adminUnlockBtn');
+  const adminPinError = document.getElementById('adminPinError');
+  const search = document.getElementById('search');
+  const tierFilter = document.getElementById('tierFilter');
+  const counts = document.getElementById('counts');
+  const sections = document.getElementById('sections');
+
+  function unlock(){
+    lockWrap.hidden = true;
+    content.hidden = false;
+    try{ localStorage.setItem(ADMIN_UNLOCK_KEY, '1'); }catch(e){}
+    renderAll();
+  }
+
+  function tryUnlock(){
+    if(adminPin.value === ADMIN_PIN){
+      adminPinError.style.display = 'none';
+      unlock();
+    } else {
+      adminPinError.style.display = 'block';
+      adminPin.value = '';
+      adminPin.focus();
+    }
+  }
+  adminUnlockBtn.addEventListener('click', tryUnlock);
+  adminPin.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+
+  function allQuestions(){
+    let out = [];
+    TIER_ORDER.forEach(t => {
+      BANK[t].forEach((q, idx) => out.push(Object.assign({cat: TIER_LABELS[t], tier: t, _id: makeId(t, idx)}, q)));
+    });
+    GUESS_BANK.forEach((q, idx) => out.push(Object.assign({cat: 'Hádej číslo/datum', tier: 'guess', type: 'guess', _id: makeId('guess', idx)}, q)));
+    return out;
+  }
+
+  const ALL = allQuestions();
+  const SECTION_LABELS = {leh:'Lehké', str:'Střední', tez:'Těžké', exp:'Expert', guess:'Hádej číslo / datum'};
+
+  function answerText(q){
+    if(q.type === 'guess') return q.display || (q.a.toLocaleString('cs-CZ') + ' ' + (q.unit || ''));
+    if(q.type === 'choice' ) return q.a;
+    return q.a;
+  }
+
+  function renderAll(){
+    const term = search.value.trim().toLowerCase();
+    const tierSel = tierFilter.value;
+    const filtered = ALL.filter(q => {
+      if(tierSel && q.tier !== tierSel) return false;
+      if(!term) return true;
+      const hay = (q.q + ' ' + answerText(q) + ' ' + (q.fact || '')).toLowerCase();
+      return hay.includes(term);
+    });
+
+    counts.textContent = filtered.length + ' z celkem ' + ALL.length + ' otázek v databázi.';
+
+    sections.innerHTML = '';
+    const order = ['leh', 'str', 'tez', 'exp', 'guess'];
+    order.forEach(t => {
+      const items = filtered.filter(q => q.tier === t);
+      if(!items.length) return;
+      const sec = document.createElement('div');
+      sec.className = 'tier-section card';
+      const h2 = document.createElement('h2');
+      h2.textContent = SECTION_LABELS[t];
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = items.length + ' otázek';
+      h2.appendChild(n);
+      sec.appendChild(h2);
+      items.forEach((q, i) => {
+        const row = document.createElement('div');
+        row.className = 'preview-row';
+        const head = document.createElement('div'); head.className = 'phead';
+        const badge = document.createElement('span'); badge.className = 'pbadge'; badge.textContent = (i + 1) + '.' + (q.type === 'choice' ? ' ABCD' : (q.visual ? ' 🖼️' : ''));
+        head.appendChild(badge);
+        row.appendChild(head);
+        const qEl = document.createElement('p'); qEl.className = 'pq'; qEl.textContent = q.q;
+        row.appendChild(qEl);
+        if(q.options){
+          const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+          const opts = document.createElement('p'); opts.className = 'pf';
+          opts.textContent = q.options.map((o, oi) => letters[oi] + ') ' + o).join('   ');
+          row.appendChild(opts);
+        }
+        const aEl = document.createElement('p'); aEl.className = 'pa'; aEl.textContent = answerText(q);
+        row.appendChild(aEl);
+        if(q.fact){
+          const fEl = document.createElement('p'); fEl.className = 'pf'; fEl.textContent = '💡 ' + q.fact;
+          row.appendChild(fEl);
+        }
+        if(q.src){
+          const sEl = document.createElement('p'); sEl.className = 'pf';
+          sEl.innerHTML = 'Zdroj: <a href="' + q.src + '" target="_blank" rel="noopener">' + (q.srcName || q.src) + '</a>';
+          row.appendChild(sEl);
+        }
+        sec.appendChild(row);
+      });
+      sections.appendChild(sec);
+    });
+  }
+
+  search.addEventListener('input', renderAll);
+  tierFilter.addEventListener('change', renderAll);
+
+  try{
+    if(localStorage.getItem(ADMIN_UNLOCK_KEY) === '1') unlock();
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
