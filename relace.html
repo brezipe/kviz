@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Herní relace — Rodinný kvíz</title>
+<meta name="description" content="Přehled a obnova uložených herních relací — jen pro organizátora, chráněno PINem.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Figtree:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+.pagehead{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+.pagehead a.back{color:var(--muted); font-size:.9rem; text-decoration:none;}
+.pagehead a.back:hover{color:var(--accent);}
+.counts{color:var(--muted); font-size:.85rem; margin:0 0 10px;}
+.srow{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:14px 0; border-top:1px solid var(--line);}
+.srow:first-of-type{border-top:none;}
+.srow .meta{flex:1; min-width:200px;}
+.srow .teams{font-weight:700;}
+.srow .when{color:var(--muted); font-size:.85rem; margin-top:2px;}
+.srow .btnrow{margin:0;}
+.empty{color:var(--muted); padding:20px 0;}
+.err{color:var(--accent); padding:20px 0;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="pagehead">
+    <div>
+      <h1 class="title" style="font-size:1.8rem;">🗄️ Herní relace</h1>
+      <p class="sub">Záloha rozehraných her — obnovení na tomto zařízení</p>
+    </div>
+    <a class="back" href="index.html">← Zpět na kvíz</a>
+  </div>
+</div>
+
+<div class="wrap" id="lockWrap">
+  <div class="card admin-lock" id="adminLock">
+    <p class="hint" style="margin:0 0 10px;">🔒 Tahle stránka vidí všechny uložené relace — zadej stejný PIN jako u nástrojů pro organizátora.</p>
+    <div class="btnrow">
+      <input type="password" id="adminPin" inputmode="numeric" maxlength="4" placeholder="PIN" style="max-width:110px;">
+      <button class="primary" id="adminUnlockBtn" type="button">Odemknout</button>
+    </div>
+    <p class="hint" id="adminPinError" style="color:var(--accent); display:none; margin-top:8px;">Špatný PIN.</p>
+  </div>
+</div>
+
+<div class="wrap" id="content" hidden>
+  <div class="card">
+    <p class="counts" id="counts">Načítám…</p>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const ADMIN_PIN = '5555';
+  const ADMIN_UNLOCK_KEY = 'rodinny-kviz-admin-unlocked';
+  const STORAGE_KEY = 'rodinny-kviz-v6';
+
+  const lockWrap = document.getElementById('lockWrap');
+  const adminLock = document.getElementById('adminLock');
+  const content = document.getElementById('content');
+  const adminPin = document.getElementById('adminPin');
+  const adminUnlockBtn = document.getElementById('adminUnlockBtn');
+  const adminPinError = document.getElementById('adminPinError');
+  const counts = document.getElementById('counts');
+  const list = document.getElementById('list');
+
+  let pin = '';
+
+  function unlock(){
+    lockWrap.hidden = true;
+    content.hidden = false;
+    try{ localStorage.setItem(ADMIN_UNLOCK_KEY, '1'); }catch(e){}
+    loadSessions();
+  }
+
+  function tryUnlock(){
+    if(adminPin.value === ADMIN_PIN){
+      pin = adminPin.value;
+      adminPinError.style.display = 'none';
+      unlock();
+    } else {
+      adminPinError.style.display = 'block';
+      adminPin.value = '';
+      adminPin.focus();
+    }
+  }
+  adminUnlockBtn.addEventListener('click', tryUnlock);
+  adminPin.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
+
+  function fmtWhen(ts){
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString('cs-CZ') + ' ' + d.toLocaleTimeString('cs-CZ', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function loadSessions(){
+    counts.textContent = 'Načítám…';
+    list.innerHTML = '';
+    fetch('/api/sessions', {headers: {'X-Admin-Pin': pin}})
+      .then(r => {
+        if(!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      })
+      .then(renderList)
+      .catch(err => {
+        counts.textContent = '';
+        list.innerHTML = '<p class="err">Nepodařilo se načíst relace ze serveru (' + err.message + ').</p>';
+      });
+  }
+
+  function renderList(sessions){
+    if(!sessions.length){
+      counts.textContent = '';
+      list.innerHTML = '<p class="empty">Žádné uložené relace zatím nejsou.</p>';
+      return;
+    }
+    counts.textContent = sessions.length + ' uložených relací (nejnovější první).';
+    list.innerHTML = '';
+    sessions.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'srow';
+      const meta = document.createElement('div'); meta.className = 'meta';
+      const teams = document.createElement('div'); teams.className = 'teams';
+      teams.textContent = (s.teams && s.teams.length) ? s.teams.join(', ') : '(bez týmů)';
+      const when = document.createElement('div'); when.className = 'when';
+      when.textContent = 'Založeno ' + fmtWhen(s.created_at) + ' · poslední změna ' + fmtWhen(s.updated_at) + ' · ' + s.id;
+      meta.appendChild(teams); meta.appendChild(when);
+      const btnrow = document.createElement('div'); btnrow.className = 'btnrow';
+      const btn = document.createElement('button'); btn.className = 'primary'; btn.type = 'button';
+      btn.textContent = 'Obnovit';
+      btn.addEventListener('click', () => restore(s.id, btn));
+      btnrow.appendChild(btn);
+      row.appendChild(meta); row.appendChild(btnrow);
+      list.appendChild(row);
+    });
+  }
+
+  function restore(sid, btn){
+    btn.disabled = true;
+    btn.textContent = 'Obnovuji…';
+    fetch('/api/session/' + encodeURIComponent(sid), {headers: {'X-Admin-Pin': pin}})
+      .then(r => {
+        if(!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      })
+      .then(state => {
+        delete state._created_at;
+        delete state._updated_at;
+        state.serverId = sid;
+        try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+        location.href = 'index.html';
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'Obnovit';
+        alert('Obnovení se nepodařilo: ' + err.message);
+      });
+  }
+
+  try{
+    if(localStorage.getItem(ADMIN_UNLOCK_KEY) === '1'){
+      pin = ADMIN_PIN;
+      unlock();
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

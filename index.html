@@ -62,6 +62,7 @@
     <summary>🛠️ Pro organizátora — připravit konkrétní sadu otázek</summary>
     <p class="hint" style="margin-top:10px;">Vyber obtížnosti a počet otázek, vygeneruj odkaz a ulož si ho — kdykoliv ho otevřeš, dostaneš přesně tuhle stejnou sadu (nehraje se náhodně jako normálně).</p>
     <p class="hint"><a href="otazky.html">📋 Zobrazit celou databázi otázek (přehled pro organizátora)</a></p>
+    <p class="hint"><a href="relace.html">🗄️ Uložené herní relace (obnovit rozehranou hru)</a></p>
 
     <fieldset class="tierpick">
       <legend>Obtížnosti</legend>
@@ -228,6 +229,21 @@
   }
   function save(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+    syncServer();
+  }
+
+  // ── Záloha relace na server (ať se o rozehranou hru nepřijde) ───────────
+  let syncTimer = null;
+  function syncServer(){
+    if(!state.serverId) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      fetch('/api/sync', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(Object.assign({}, state, {id: state.serverId}))
+      }).catch(() => {});
+    }, 400);
   }
 
   const teamlist = document.getElementById('teamlist');
@@ -740,6 +756,7 @@
     state.current = 0;
     state.revealed = false;
     state.history = [];
+    state.serverId = null;
     save();
     resultsEl.hidden = true;
     gameEl.hidden = false;
@@ -748,6 +765,13 @@
     renderScorebar();
     renderHistory();
     renderQuestion();
+    fetch('/api/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(state)
+    }).then(r => r.ok ? r.json() : null)
+      .then(data => { if(data && data.id){ state.serverId = data.id; save(); } })
+      .catch(() => {});
   }
 
   restartBtn.addEventListener('click', doRestart);
@@ -810,6 +834,7 @@
     state.revealed = false;
     state.started = true;
     state.history = [];
+    state.serverId = null;
     save();
     setupEl.hidden = true;
     scorebar.hidden = false;
@@ -818,6 +843,13 @@
     renderScorebar();
     renderHistory();
     renderQuestion();
+    fetch('/api/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(state)
+    }).then(r => r.ok ? r.json() : null)
+      .then(data => { if(data && data.id){ state.serverId = data.id; save(); } })
+      .catch(() => {});
   });
 
   function tierSummary(questions){
