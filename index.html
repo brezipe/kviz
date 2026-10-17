@@ -99,6 +99,18 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .guess-row.closest{outline:2px solid var(--accent); border-radius:10px;}
 .guess-row .tag{font-size:.78rem; color:var(--accent); font-weight:700; white-space:nowrap;}
 
+.admin-card{margin-top:4px;}
+.admin-card summary{cursor:pointer; font-weight:700; color:var(--accent);}
+.admin-card summary::marker{color:var(--accent);}
+.tierpick{border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:12px;}
+.tierpick legend{padding:0 6px; color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.1em;}
+.tierpick label{display:flex; align-items:center; gap:6px; font-weight:600; font-size:.92rem;}
+.slugresult{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+.slugresult input{flex:1; min-width:200px; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:.82rem;}
+.slugnote{background:var(--surface2); border-radius:10px; padding:12px 14px; margin-top:14px;}
+.slugnote .hint{margin:0;}
+.slugnote a{display:inline-block; margin-top:6px;}
+
 .podium{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
 .prow{display:flex; align-items:center; gap:14px; background:var(--surface2); border-radius:12px; padding:14px 16px;}
 .prow.win{background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, var(--surface2)), var(--surface2)); border:1px solid var(--accent);}
@@ -133,16 +145,53 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       <button class="ghost" id="addTeam" type="button">+ Přidat tým</button>
     </div>
 
-    <div class="field">
+    <div class="field" id="qcountField">
       <label for="qcount">Kolik otázek chcete hrát?</label>
       <input type="number" id="qcount" min="8" max="64" step="4" value="20">
       <span class="hint">Vybere se poměrně ze všech 4 obtížností (lehké → expert) — pokaždé jiné otázky.</span>
+    </div>
+
+    <div class="slugnote" id="slugnote" hidden>
+      <p class="hint" id="slugnoteText"></p>
+      <a href="." id="slugClear" class="muted small">← zahodit přednastavenou sadu, hrát náhodně</a>
     </div>
 
     <div class="btnrow">
       <button class="primary" id="startBtn" type="button">Spustit kvíz →</button>
     </div>
   </div>
+
+  <details class="card admin-card">
+    <summary>🛠️ Pro organizátora — připravit konkrétní sadu otázek</summary>
+    <p class="hint" style="margin-top:10px;">Vyber obtížnosti a počet otázek, vygeneruj odkaz a ulož si ho — kdykoliv ho otevřeš, dostaneš přesně tuhle stejnou sadu (nehraje se náhodně jako normálně).</p>
+
+    <fieldset class="tierpick">
+      <legend>Obtížnosti</legend>
+      <label><input type="checkbox" id="tier-leh" checked> Lehké</label>
+      <label><input type="checkbox" id="tier-str" checked> Střední</label>
+      <label><input type="checkbox" id="tier-tez" checked> Těžké</label>
+      <label><input type="checkbox" id="tier-exp" checked> Expert</label>
+    </fieldset>
+
+    <div class="field">
+      <label for="adminN">Počet otázek z vybraných obtížností</label>
+      <input type="number" id="adminN" min="4" max="64" step="2" value="20">
+    </div>
+
+    <div class="field">
+      <label><input type="checkbox" id="adminGuessOn" checked> Zahrnout bonusové kolo Hádej číslo</label>
+      <input type="number" id="adminGuessN" min="0" max="12" step="1" value="6" style="max-width:100px; margin-top:6px;">
+    </div>
+
+    <div class="btnrow">
+      <button class="ghost" id="genSlugBtn" type="button">Vygenerovat odkaz na tuhle sadu</button>
+    </div>
+
+    <div class="slugresult" id="slugResult" hidden>
+      <input type="text" id="slugUrl" readonly>
+      <button class="small" id="slugCopy" type="button">Kopírovat</button>
+    </div>
+  </details>
 </div>
 
 <div class="scorebar" id="scorebar" hidden></div>
@@ -422,6 +471,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   // Jen ověřená, stabilní čísla (rekordy, rozměry) — žádné čerstvé roční statistiky,
   // u kterých by hrozilo, že bychom si vymysleli nepřesné číslo.
   const GUESS_BANK = [
+    {q:'Kdy (přesné datum) vjela vojska Varšavské smlouvy do Československa?', inputType:'date', a:Date.UTC(1968,7,21), display:'21. srpna 1968', fact:'Invaze zastavila reformní proces Pražského jara vedený Alexandrem Dubčekem.'},
+    {q:'Kdy (přesné datum) byl zavražděn český král Václav III., poslední Přemyslovec na trůně?', inputType:'date', a:Date.UTC(1306,7,4), display:'4. srpna 1306 (v Olomouci)', fact:'Jeho smrtí vymřel po meči rod Přemyslovců a uvolnil se český trůn.'},
+    {q:'Kdy (přesné datum) padla Berlínská zeď?', inputType:'date', a:Date.UTC(1989,10,9), display:'9. listopadu 1989', fact:'Rozdělovala Berlín přes 28 let, od roku 1961.'},
+    {q:'Kdy (přesné datum) vypukla v Československu sametová revoluce?', inputType:'date', a:Date.UTC(1989,10,17), display:'17. listopadu 1989', fact:'Spustila ji studentská demonstrace na Národní třídě v Praze, rozehnaná policií.'},
     {q:'Kolik obcí (měst, městysů a vesnic dohromady) má Česká republika?', a:6254, unit:'obcí', fact:'Česko má na svou rozlohu jedno z nejhustších sídelních uspořádání v Evropě — hodně obcí má jen pár desítek obyvatel.'},
     {q:'Kolik schodů vede od základny až na vrchol Eiffelovy věže?', a:1665, unit:'schodů', fact:'Výtahem to většina turistů ani nepozná — po schodech se běžně smí jen do druhého patra.'},
     {q:'Jak dlouhá je čínská Velká zeď i se všemi odbočkami, v kilometrech?', a:21196, unit:'km', fact:'Číslo zahrnuje i boční zdi a přírodní překážky, podle oficiálního čínského průzkumu z roku 2012.'},
@@ -437,35 +490,77 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     {q:'Kolik let se odhaduje, že trvala stavba Velké pyramidy v Gíze?', a:20, unit:'let', fact:'Na stavbě pracovaly desetitisíce placených dělníků, ne otroci, jak se dřív tradovalo.'},
   ];
 
-  function shuffle(arr){
+  // Obyčejné míchání (nová hra pokaždé jinak) i seedované (pro odkaz s konkrétní sadou — stejný seed = stejné otázky pokaždé).
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffle(arr, rng){
+    rng = rng || Math.random;
     const a = arr.slice();
     for(let i = a.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rng() * (i + 1));
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
   }
 
-  function pickQuestions(n){
-    n = Math.max(4, Math.min(n, BANK.leh.length + BANK.str.length + BANK.tez.length + BANK.exp.length));
-    const per = Math.floor(n / 4);
-    const counts = {leh: per, str: per, tez: per, exp: per};
-    let remainder = n - per * 4;
-    for(const t of TIER_ORDER){
+  // opts: {tiers:['leh','str',...], seed:number|null, guessCount:number}
+  function pickQuestions(n, opts){
+    opts = opts || {};
+    const rng = (opts.seed != null) ? mulberry32(opts.seed) : Math.random;
+    const activeTiers = (opts.tiers && opts.tiers.length) ? opts.tiers : TIER_ORDER;
+    const totalAvail = activeTiers.reduce((s, t) => s + BANK[t].length, 0);
+    n = Math.max(activeTiers.length, Math.min(n, totalAvail));
+    const per = Math.floor(n / activeTiers.length);
+    const counts = {};
+    activeTiers.forEach(t => counts[t] = per);
+    let remainder = n - per * activeTiers.length;
+    for(const t of activeTiers){
       if(remainder <= 0) break;
       counts[t]++; remainder--;
     }
     let out = [];
-    TIER_ORDER.forEach(t => {
-      const picked = shuffle(BANK[t]).slice(0, Math.min(counts[t], BANK[t].length));
+    TIER_ORDER.filter(t => activeTiers.includes(t)).forEach(t => {
+      const picked = shuffle(BANK[t], rng).slice(0, Math.min(counts[t], BANK[t].length));
       picked.forEach(q => out.push(Object.assign({cat: TIER_LABELS[t], tier: t}, q)));
     });
-    const guessCount = Math.min(6, GUESS_BANK.length);
-    shuffle(GUESS_BANK).slice(0, guessCount).forEach(q => {
-      out.push(Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess'}, q));
-    });
+    const guessCount = Math.min(opts.guessCount != null ? opts.guessCount : 6, GUESS_BANK.length);
+    if(guessCount > 0){
+      shuffle(GUESS_BANK, rng).slice(0, guessCount).forEach(q => {
+        out.push(Object.assign({cat: 'Hádej číslo', tier: 'guess', type: 'guess'}, q));
+      });
+    }
     return out;
   }
+
+  // ── Odkaz na konkrétní sadu (slug v URL) ──────────────────────────────────
+  function parseSlug(){
+    const params = new URLSearchParams(location.search);
+    const seed = params.get('seed');
+    if(seed === null) return null;
+    const tiers = (params.get('tiers') || 'leh,str,tez,exp').split(',').filter(t => TIER_ORDER.includes(t));
+    const n = parseInt(params.get('n'), 10) || 20;
+    const guessCount = params.has('guess') ? parseInt(params.get('guess'), 10) || 0 : 6;
+    return {seed: parseInt(seed, 10) || 0, tiers: tiers.length ? tiers : TIER_ORDER, n, guessCount};
+  }
+
+  function buildSlugUrl(cfg){
+    const url = new URL(location.href);
+    url.search = '';
+    url.searchParams.set('seed', cfg.seed);
+    url.searchParams.set('tiers', cfg.tiers.join(','));
+    url.searchParams.set('n', cfg.n);
+    url.searchParams.set('guess', cfg.guessCount);
+    return url.toString();
+  }
+
+  const activeSlug = parseSlug();
 
   const STORAGE_KEY = 'rodinny-kviz-v3';
   let state = {teams: [], scores: [], questions: [], current: 0, revealed: false, started: false, qcount: 20};
@@ -486,6 +581,17 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const teamlist = document.getElementById('teamlist');
   const addTeamBtn = document.getElementById('addTeam');
   const qcountInput = document.getElementById('qcount');
+  const qcountField = document.getElementById('qcountField');
+  const slugnote = document.getElementById('slugnote');
+  const slugnoteText = document.getElementById('slugnoteText');
+  const slugClear = document.getElementById('slugClear');
+  const adminN = document.getElementById('adminN');
+  const adminGuessOn = document.getElementById('adminGuessOn');
+  const adminGuessN = document.getElementById('adminGuessN');
+  const genSlugBtn = document.getElementById('genSlugBtn');
+  const slugResult = document.getElementById('slugResult');
+  const slugUrl = document.getElementById('slugUrl');
+  const slugCopy = document.getElementById('slugCopy');
   const startBtn = document.getElementById('startBtn');
   const setupEl = document.getElementById('setup');
   const gameEl = document.getElementById('game');
@@ -606,6 +712,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   }
 
   function buildGuessInputs(){
+    const q = state.questions[state.current];
     guesslist.innerHTML = '';
     state.teams.forEach((name, i) => {
       const row = document.createElement('div');
@@ -613,18 +720,28 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       row.id = 'guess-row-' + i;
       const nm = document.createElement('span'); nm.className = 'gnm'; nm.textContent = name || ('Tým ' + (i+1));
       const input = document.createElement('input');
-      input.type = 'number'; input.id = 'guess-input-' + i; input.placeholder = 'odhad';
+      input.type = q.inputType === 'date' ? 'date' : 'number';
+      input.id = 'guess-input-' + i;
+      if(input.type === 'number') input.placeholder = 'odhad';
       row.appendChild(nm); row.appendChild(input);
       guesslist.appendChild(row);
     });
+  }
+
+  function guessDiff(q, rawValue){
+    if(q.inputType === 'date'){
+      const t = Date.parse(rawValue);
+      return isNaN(t) ? Infinity : Math.abs(t - q.a) / 86400000; // rozdíl ve dnech
+    }
+    const val = parseFloat(rawValue);
+    return isNaN(val) ? Infinity : Math.abs(val - q.a);
   }
 
   function evaluateGuesses(){
     const q = state.questions[state.current];
     const diffs = state.teams.map((_, i) => {
       const el = document.getElementById('guess-input-' + i);
-      const val = el ? parseFloat(el.value) : NaN;
-      return isNaN(val) ? Infinity : Math.abs(val - q.a);
+      return el ? guessDiff(q, el.value) : Infinity;
     });
     const minDiff = Math.min(...diffs);
     if(minDiff === Infinity) return; // nikdo nic nezadal
@@ -661,7 +778,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     progress.textContent = 'Otázka ' + (state.current + 1) + ' / ' + state.questions.length;
     qtext.textContent = q.q;
     buildVisual(q.visual);
-    answertext.textContent = isGuess ? (q.a.toLocaleString('cs-CZ') + ' ' + q.unit) : q.a;
+    answertext.textContent = isGuess ? (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit)) : q.a;
     facttext.textContent = q.fact || '';
 
     guessbox.classList.toggle('show', isGuess && !state.revealed);
@@ -720,8 +837,15 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     save();
   }
 
+  function pickForGame(){
+    if(activeSlug){
+      return pickQuestions(activeSlug.n, {tiers: activeSlug.tiers, seed: activeSlug.seed, guessCount: activeSlug.guessCount});
+    }
+    return pickQuestions(state.qcount);
+  }
+
   function doRestart(){
-    state.questions = pickQuestions(state.qcount);
+    state.questions = pickForGame();
     state.scores = state.teams.map(() => 0);
     state.current = 0;
     state.revealed = false;
@@ -755,7 +879,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     state.teams = state.teams.map((n, i) => (n && n.trim()) || ('Tým ' + (i + 1)));
     if(state.teams.length < 2){ return; }
     state.qcount = Math.max(8, Math.min(parseInt(qcountInput.value, 10) || 20, 64));
-    state.questions = pickQuestions(state.qcount);
+    state.questions = pickForGame();
     state.scores = state.teams.map(() => 0);
     state.current = 0;
     state.revealed = false;
@@ -768,6 +892,44 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     renderQuestion();
   });
 
+  function tierSummary(tiers){
+    return tiers.map(t => TIER_LABELS[t]).join(', ');
+  }
+
+  function wireAdminPanel(){
+    genSlugBtn.addEventListener('click', () => {
+      const tiers = TIER_ORDER.filter(t => document.getElementById('tier-' + t).checked);
+      if(!tiers.length){
+        slugUrl.value = 'Vyber aspoň jednu obtížnost.';
+        slugResult.hidden = false;
+        return;
+      }
+      const cfg = {
+        seed: Math.floor(Math.random() * 1e9),
+        tiers,
+        n: Math.max(4, Math.min(parseInt(adminN.value, 10) || 20, 64)),
+        guessCount: adminGuessOn.checked ? Math.max(0, Math.min(parseInt(adminGuessN.value, 10) || 0, 12)) : 0,
+      };
+      slugUrl.value = buildSlugUrl(cfg);
+      slugResult.hidden = false;
+      slugUrl.select();
+    });
+    slugCopy.addEventListener('click', () => {
+      slugUrl.select();
+      navigator.clipboard && navigator.clipboard.writeText(slugUrl.value).catch(() => {});
+      slugCopy.textContent = 'Zkopírováno!';
+      setTimeout(() => { slugCopy.textContent = 'Kopírovat'; }, 1500);
+    });
+  }
+
+  function applySlugUI(){
+    if(!activeSlug) return;
+    qcountField.hidden = true;
+    slugnote.hidden = false;
+    const guessPart = activeSlug.guessCount > 0 ? (' + bonus Hádej číslo (' + activeSlug.guessCount + ')') : '';
+    slugnoteText.textContent = 'Přednastavená sada: ' + activeSlug.n + ' otázek · ' + tierSummary(activeSlug.tiers) + guessPart + '.';
+  }
+
   function boot(){
     load();
     if(!state.teams.length) state.teams = DEFAULT_NAMES.slice();
@@ -775,6 +937,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     renderTeamInputs();
     if(state.teams.length >= 6) addTeamBtn.disabled = true;
     qcountInput.value = state.qcount || 20;
+    wireAdminPanel();
+    applySlugUI();
 
     if(state.started && state.questions.length && state.current < state.questions.length){
       setupEl.hidden = true;
