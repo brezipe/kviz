@@ -73,6 +73,11 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .progress{color:var(--muted); font-size:.85rem;}
 .qtext{font-size:clamp(1.2rem,3.4vw,1.55rem); line-height:1.4; margin:14px 0 0;}
 .visual{display:flex; justify-content:center; align-items:center; margin:18px 0; min-height:90px;}
+.visual svg{width:220px; max-width:70vw; height:auto; color:var(--fg);}
+.choices{display:flex; flex-direction:column; gap:8px; margin-top:14px;}
+.choices .opt{display:flex; gap:10px; padding:10px 14px; background:var(--surface2); border:1px solid var(--line); border-radius:10px; font-size:.95rem;}
+.choices .opt .letter{font-weight:800; color:var(--accent); flex:none;}
+.choices .opt.correct{outline:2px solid var(--accent2); border-color:var(--accent2);}
 .flag{display:flex; width:180px; max-width:60vw; height:120px; border-radius:6px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow);}
 .flag div{flex:1;}
 .emoji-visual{font-size:5rem; line-height:1;}
@@ -244,6 +249,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       </span>
     </div>
     <p class="qtext" id="qtext"></p>
+    <div class="choices" id="choices" hidden></div>
     <div class="visual" id="visual" hidden></div>
 
     <div class="guessbox" id="guessbox" hidden>
@@ -339,6 +345,22 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Který pták je nejrychlejší na světě v řízeném střemhlavém letu?', a:'Sokol stěhovavý', fact:'Při útoku na kořist dosahuje rychlosti přes 300 km/h.'},
       {q:'Který jazyk má na světě nejvíc rodilých mluvčích?', a:'Mandarínská čínština', fact:'Mluví jí rodilě přes 900 milionů lidí, hlavně v Číně.'},
       {q:'Jak se jmenuje nejvyšší aktivní sopka v Evropě?', a:'Etna na Sicílii', fact:'Je zároveň jednou z nejaktivnějších sopek na světě.'},
+      {q:'Jaký je nejčastější krevní typ u lidí v Evropě?', a:'0 (nula), nejčastěji Rh pozitivní', fact:'Lidé s touto krevní skupinou se označují za "univerzální dárce".'},
+      {q:'Kolik barev má švýcarská vlajka a jaké?', a:'2 — červená a bílá', fact:'Švýcarsko má jednu ze dvou čtvercových státních vlajek na světě, druhou je Vatikán.'},
+      {q:'Jak se jmenuje hlavní město Egypta?', a:'Káhira', fact:'Je největší město v arabském světě i na celém africkém kontinentu.'},
+      {q:'Který je nejmenší oceán na světě?', a:'Severní ledový oceán (Arktický)', fact:'Většinu roku je z velké části pokrytý mořským ledem.'},
+      {q:'Kolik strun má klasické housle?', a:'4', fact:'Ladí se obvykle na tóny G-D-A-E.'},
+      {q:'Která poušť je považována za nejsušší místo na světě (mimo póly)?', a:'Atacama v Chile', fact:'Na některých místech tam roky vůbec nezaprší.'},
+      {q:'Který pták je národním symbolem USA?', a:'Orel bělohlavý', fact:'Jako symbol byl přijat v roce 1782, přestože se Benjamin Franklin přimlouval za krocana.'},
+      {q:'Kolik kostí tvoří dohromady lidskou lebku (včetně obličejových)?', a:'22', fact:'8 kostí tvoří lebeční schránku a 14 obličejovou část.'},
+      {q:'Jaká je úřední měna Číny?', a:'Jüan (renminbi)', fact:'Název "žen-min-pi" znamená doslova "lidové peníze".'},
+      {q:'Jak se jmenuje hlavní město Portugalska?', a:'Lisabon', fact:'Je jedno z nejstarších měst západní Evropy, starší než Londýn nebo Paříž.'},
+      {q:'Kolik měsíců trvá v průměru lidské těhotenství?', a:'9 měsíců (asi 40 týdnů)', fact:'Počítá se od prvního dne poslední menstruace, ne od početí.'},
+      {q:'Který živočich je symbolem Číny a patří mezi ohrožené druhy?', a:'Panda velká', fact:'Živí se téměř výhradně bambusem, i když patří mezi šelmy.'},
+      {q:'Kolik planet sluneční soustavy má kolem sebe prstence?', a:'4 — Jupiter, Saturn, Uran, Neptun', fact:'Saturnovy prstence jsou nejnápadnější a dobře viditelné i malým dalekohledem.'},
+      {q:'Jak se jmenuje hlavní město Řecka?', a:'Athény', fact:'Patří mezi nejstarší nepřetržitě obydlená města světa — přes 3000 let.'},
+      {q:'Jak se jmenuje nejrychlejší komerčně provozovaný vlak na světě (typ maglev) v Šanghaji?', a:'Šanghajský Transrapid', fact:'Dosahuje rychlosti přes 400 km/h a jede na magnetickém polštáři bez kontaktu s kolejnicemi.'},
+      {q:'Který z těchto skladatelů byl Čech?', type:'choice', options:['Wolfgang Amadeus Mozart','Antonín Dvořák','Ludwig van Beethoven','Johann Sebastian Bach'], correctIndex:1, a:'B) Antonín Dvořák', fact:'Dvořák je jeden z nejhranějších českých skladatelů na světě, proslavila ho hlavně Symfonie č. 9 Z nového světa.'},
     ],
     str: [
       {q:'Kolik časových pásem má Rusko?', a:'11', fact:'Je to nejvíc časových pásem ze všech zemí světa.'},
@@ -390,6 +412,23 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Který je momentálně nejlidnatější stát světa?', a:'Indie', fact:'V roce 2023 počtem obyvatel předstihla Čínu.'},
       {q:'Jak se jmenuje proces, kterým se sůl rozpouští ve vodě?', a:'Rozpouštění (disociace)', fact:'Molekuly vody obklopí ionty soli a oddělí je od sebe.'},
       {q:'Který italský stát leží celý uvnitř hranic Říma?', a:'Vatikán', fact:'Je to nejmenší stát světa, sídlo papeže a římskokatolické církve.'},
+      {q:'Jak se jmenuje mořský průliv oddělující Asii od Severní Ameriky?', a:'Beringův průliv', fact:'V nejužším místě měří jen asi 82 km a v zimě občas částečně zamrzá.'},
+      {q:'Kdo složil operu Kouzelná flétna?', a:'Wolfgang Amadeus Mozart', fact:'Premiéru měla jen pár měsíců před Mozartovou smrtí v roce 1791.'},
+      {q:'V jakém roce byl založen stát Izrael?', a:'1948', fact:'Vyhlášení nezávislosti vedlo bezprostředně k první arabsko-izraelské válce.'},
+      {q:'Který vynálezce je nejčastěji spojován s vynálezem telefonu?', a:'Alexander Graham Bell', fact:'Patent získal v roce 1876, ačkoliv se o prvenství dodnes vedou historické spory.'},
+      {q:'Jak se jmenuje buněčné dělení, při kterém vznikají pohlavní buňky s poloviční sadou chromozomů?', a:'Meióza', fact:'Na rozdíl od mitózy tak zajišťuje, že po oplodnění má nový jedinec normální počet chromozomů.'},
+      {q:'Kde se nachází nejnižší místo na souši na Zemi?', a:'Břehy Mrtvého moře', fact:'Leží přes 430 metrů pod úrovní hladiny moře.'},
+      {q:'Kdo namaloval obraz Hvězdná noc?', a:'Vincent van Gogh', fact:'Namaloval ho v roce 1889, přibližně rok před svou smrtí.'},
+      {q:'Který je druhý nejvyšší vrchol světa?', a:'K2', fact:'Mezi horolezci je považován za technicky nejnáročnější a nejnebezpečnější z osmitisícovek.'},
+      {q:'V jakém roce skončila válka ve Vietnamu?', a:'1975', fact:'Skončila pádem Saigonu a sjednocením Vietnamu pod komunistickou vládou.'},
+      {q:'Který je nejstarší dosud žijící jednotlivý strom na světě?', a:'Borovice dlouhověká zvaná Methuselah', fact:'Odhaduje se, že je starší než 4800 let.'},
+      {q:'Kdo byla první žena, která získala Nobelovu cenu?', a:'Marie Curie-Skłodowská', fact:'Získala ji dokonce dvakrát — za fyziku i za chemii.'},
+      {q:'Jak se jmenuje nejdelší zmapovaný jeskynní systém na světě?', a:'Mamutí jeskyně v USA', fact:'Zmapováno je v ní přes 650 kilometrů chodeb.'},
+      {q:'Kolik úředních jazyků má Švýcarsko?', a:'4 — němčina, francouzština, italština a rétorománština', fact:'Němčinou mluví jako mateřským jazykem nejvíc obyvatel země.'},
+      {q:'Jak se jmenuje proces, při kterém kvasinky mění cukr na alkohol a oxid uhličitý?', a:'Fermentace (kvašení)', fact:'Používá se při výrobě piva, vína i pečiva.'},
+      {q:'Kdo složil symfonii "Z nového světa", inspirovanou pobytem v USA?', type:'choice', options:['Bedřich Smetana','Antonín Dvořák','Leoš Janáček','Gustav Mahler'], correctIndex:1, a:'B) Antonín Dvořák', fact:'Napsal ji v roce 1893 během svého působení jako ředitel newyorské konzervatoře.'},
+      {q:'Kolik strun má standardně koncertní (orchestrální) harfa?', type:'choice', options:['32','47','60','75'], correctIndex:1, a:'B) 47', fact:'Harfa má navíc 7 pedálů, kterými se mění tónina během hry.'},
+      {q:'Který z těchto měst NENÍ hlavním městem své země?', type:'choice', options:['Ankara','Ottawa','Sydney','Bern'], correctIndex:2, a:'C) Sydney', fact:'Hlavním městem Austrálie je Canberra — Sydney je jen největší a nejznámější město země.'},
     ],
     tez: [
       {q:'V jakém roce byla podepsána Vestfálská mírová smlouva, ukončující třicetiletou válku?', a:'1648', fact:'Položila základ modernímu pojetí státní suverenity v mezinárodních vztazích.'},
@@ -441,6 +480,23 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Který starověký astronom jako první pozoruhodně přesně spočítal obvod Země?', a:'Eratosthenés', fact:'Použil k tomu stíny ve dvou egyptských městech, přibližně kolem roku 240 př. n. l.'},
       {q:'Jak se jmenuje nejstarší řecký filozofický směr zabývající se hledáním základní látky vesmíru?', a:'Milétská škola', fact:'Jejím zakladatelem byl Thalés z Milétu, žijící v 6. století př. n. l.'},
       {q:'Který středověký český král byl i polským králem?', a:'Václav II.', fact:'Polským králem byl korunován v roce 1300.'},
+      {q:'V jakém roce byla uzavřena Lublinská unie, která spojila Polsko a Litvu v jeden stát?', a:'1569', fact:'Vznikla tak Polsko-litevská unie, jeden z největších států tehdejší Evropy.'},
+      {q:'Jak se jmenuje bitva z roku 1241, při které mongolská vojska poprvé napadla střední Evropu?', a:'Bitva u Lehnice', fact:'Mongolové zpustošili velkou část Polska a Slezska, než se nečekaně stáhli zpět na východ.'},
+      {q:'Který astronom objevil planetu Neptun na základě matematických výpočtů, ne přímým pozorováním?', a:'Johann Galle (podle výpočtů Le Verriera)', fact:'Planeta byla objevena v roce 1846, prakticky přesně tam, kde ji výpočty předpověděly.'},
+      {q:'Jak se jmenuje nejstarší dochovaný text o vojenské strategii, pocházející ze starověké Číny?', a:'Umění války od Sun Tzu', fact:'Vznikl pravděpodobně v 5. století př. n. l. a dodnes se cituje i mimo vojenství, třeba v byznysu.'},
+      {q:'Jak se nazývá středověká epidemie moru, která ve 14. století zabila odhadem třetinu evropské populace?', a:'Černá smrt (dýmějový mor)', fact:'Do Evropy se dostala přes obchodní lodě z Asie kolem roku 1347.'},
+      {q:'Jak se jmenovala poslední vládnoucí královna starověkého Egypta?', a:'Kleopatra VII.', fact:'Po její smrti v roce 30 př. n. l. se Egypt stal římskou provincií.'},
+      {q:'Jak se jmenuje teorie, podle které byly kontinenty kdysi spojené v jeden superkontinent, než se postupně rozestoupily?', a:'Teorie kontinentálního driftu (Pangea)', fact:'Formuloval ji německý vědec Alfred Wegener v roce 1912.'},
+      {q:'Jak se jmenuje nejstarší dosud fungující evropská univerzita?', a:'Univerzita v Bologni', fact:'Založena byla už v roce 1088, o více než 250 let dřív než pražská Karlova univerzita.'},
+      {q:'Kdo podle legendy rozťal mečem gordický uzel a naplnil tak věštbu o ovládnutí Asie?', a:'Alexandr Veliký', fact:'Uzel byl tak zamotaný, že se ho nikomu nepodařilo rozvázat — Alexandr ho prostě přesekl.'},
+      {q:'V jakém roce vypukla francouzská revoluce dobytím pevnosti Bastila?', a:'1789', fact:'Bastila sloužila hlavně jako vězení, v den dobytí v ní bylo jen pár vězňů.'},
+      {q:'Který panovník nechal založit pražské Nové Město a Karlovu univerzitu ve stejném roce?', a:'Karel IV.', fact:'Obojí se událo v roce 1348, během jediného z nejvýznamnějších let českých dějin.'},
+      {q:'Jak se jmenuje námořní bitva z roku 1805, ve které admirál Nelson porazil francouzsko-španělskou flotilu?', a:'Bitva u Trafalgaru', fact:'Nelson v bitvě padl, ale vítězství zajistilo Británii nadvládu na moři na celé další století.'},
+      {q:'Jak se jmenuje nejstarší dochovaný řecký epos, připisovaný Homérovi a líčící trojskou válku?', a:'Ílias', fact:'Vznikla pravděpodobně v 8. století př. n. l. a patří mezi základy celé evropské literatury.'},
+      {q:'Který mořeplavec ve službách Španělska připlul v roce 1492 k americkým břehům, aniž tušil, že jde o nový kontinent?', a:'Kryštof Kolumbus', fact:'Hledal západní cestu do Indie — proto se domorodým obyvatelům Ameriky dlouho říkalo "Indiáni".'},
+      {q:'Jak se nazývá základní fyzikální zákon, podle kterého energie ani hmota nemohou vznikat ani zanikat, jen se přeměňovat?', a:'Zákon zachování energie', fact:'Patří mezi nejzákladnější a nejlépe ověřené zákony celé fyziky.'},
+      {q:'Který hudební skladatel složil cyklus houslových koncertů Čtvero ročních období?', type:'choice', options:['Johann Sebastian Bach','Antonio Vivaldi','Georg Friedrich Händel','Joseph Haydn'], correctIndex:1, a:'B) Antonio Vivaldi', fact:'Vznikl kolem roku 1725 a patří mezi nejhranější barokní skladby vůbec.'},
+      {q:'Kolik krčních obratlů má žirafa — stejně jako člověk?', type:'choice', options:['4','7','12','19'], correctIndex:1, a:'B) 7', fact:'Žirafí obratle jsou jen mnohem delší, počet je u většiny savců stejný.'},
     ],
     exp: [
       {q:'Jak se jmenoval poslední jugoslávský král před nastolením komunismu?', a:'Petr II. Karađorđević', fact:'Po válce odešel do exilu a monarchie v Jugoslávii nebyla nikdy obnovena.'},
@@ -493,14 +549,37 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Který anglický král byl zabit v bitvě u Bosworthu, čímž skončila válka růží?', a:'Richard III.', fact:'Jeho ostatky byly znovu nalezeny až v roce 2012 pod parkovištěm v Leicesteru.'},
       {q:'Jak se jmenuje nejstarší známý systém psaní na světě?', a:'Sumerské klínové písmo', fact:'Vzniklo v Mezopotámii přibližně před 5000 lety.'},
       {q:'Který řecký lékař je považován za "otce medicíny" a je po něm pojmenována lékařská přísaha?', a:'Hippokrates', fact:'Žil v 5. až 4. století př. n. l. na ostrově Kós.'},
+      {q:'Která byzantská princezna a historička napsala kroniku Alexias o vládě svého otce?', a:'Anna Komnena', fact:'Je považována za jednu z prvních známých historiček na světě.'},
+      {q:'Jak se jmenuje nejstarší dochovaný matematický text s přibližným odhadem čísla pí?', a:'Rhindův papyrus', fact:'Pochází ze starověkého Egypta, přibližně z roku 1650 př. n. l., a odhad pí se mýlil jen asi o 0,6 %.'},
+      {q:'Který nizozemský filozof byl vyloučen ze židovské obce a napsal filozofické dílo Etika?', a:'Baruch Spinoza', fact:'Vyobcován byl v roce 1656, jeho myšlenky výrazně ovlivnily pozdější osvícenství.'},
+      {q:'Jak se jmenuje jev, při kterém gravitace masivního tělesa ohýbá procházející světlo?', a:'Gravitační čočkování', fact:'Poprvé bylo potvrzeno při zatmění Slunce v roce 1919, čímž se ověřila Einsteinova teorie relativity.'},
+      {q:'Který arabský učenec z 9. století je považován za zakladatele algebry a dal jméno pojmu "algoritmus"?', a:'Al-Chwárizmí', fact:'Působil v Bagdádu, centru tehdejší vědy islámského světa.'},
+      {q:'Jak se jmenovala poslední havajská královna, svržená v roce 1893?', a:'Liliuokalani', fact:'Po svržení monarchie se Havaj později stala územím a nakonec i státem USA.'},
+      {q:'Který chemický prvek byl objeven nejdřív ve slunečním spektru a až později nalezen na Zemi?', a:'Helium', fact:'Objeven byl při zatmění Slunce v roce 1868, jméno dostal podle řeckého boha Hélia.'},
+      {q:'Jak se jmenuje bitva z roku 1071, ve které Seldžučtí Turci drtivě porazili byzantskou armádu?', a:'Bitva u Mantzikertu', fact:'Porážka vážně oslabila Byzanc a později vedla k výzvám o pomoc, které odstartovaly křížové výpravy.'},
+      {q:'Jak se jmenuje nejstarší dochovaný kompletní soubor římského práva, sepsaný z příkazu byzantského císaře?', a:'Corpus Iuris Civilis (Justiniánův kodex)', fact:'Vznikl na počátku 6. století a stal se základem většiny moderních kontinentálních právních systémů.'},
+      {q:'Jak se jmenuje smlouva z roku 1494, která rozdělila nově objevený svět mezi Portugalsko a Španělsko?', a:'Tordesillaská smlouva', fact:'Díky ní se dnes v Brazílii mluví portugalsky, zatímco zbytek Jižní Ameriky mluví španělsky.'},
+      {q:'Jak se jmenuje starověký analogový mechanismus nalezený v moři u Řecka, který dokázal předpovídat polohy planet?', a:'Antikythérský mechanismus', fact:'Je starý víc než 2000 let a svou složitostí předběhl dobu o více než tisíc let.'},
+      {q:'Který mladý francouzský matematik zemřel v souboji ve věku 20 let, ačkoliv stihl položit základy teorie grup?', a:'Évariste Galois', fact:'Noc před soubojem prý v chvatu sepsal své matematické myšlenky do dopisu příteli.'},
+      {q:'Který starověký řecký vynálezce zkonstruoval první známé zařízení poháněné párou?', a:'Hérón Alexandrijský', fact:'Jeho zařízení zvané aeolipile roztáčelo páru kouli, k praktickému využití páry ale došlo až o skoro dva tisíce let později.'},
+      {q:'Který hudební skladatel je autorem operního cyklu Prsten Nibelungův, trvajícího přes 15 hodin?', type:'choice', options:['Giuseppe Verdi','Richard Wagner','Giacomo Puccini','Johannes Brahms'], correctIndex:1, a:'B) Richard Wagner', fact:'Na premiéru celého cyklu v Bayreuthu v roce 1876 přijel i německý císař Vilém I.'},
+      {q:'Kolik strun má tradiční japonský strunný nástroj koto?', type:'choice', options:['6','13','21','25'], correctIndex:1, a:'B) 13', fact:'Koto je drnkací nástroj podobný citeře, hraje se na něj položený vodorovně na zemi.'},
     ],
   };
 
   const TIER_LABELS = {leh:'Lehké', str:'Střední', tez:'Těžké', exp:'Expert'};
   const TIER_ORDER = ['leh','str','tez','exp'];
-  BANK.str.push({q:'Kterou zemi reprezentuje tahle vlajka?', a:'Belgie', fact:'Belgická vlajka má svislé pruhy na rozdíl od podobné německé, která má vodorovné.'});
+  BANK.str.push({q:'Kterou zemi reprezentuje tahle vlajka?', a:'Belgie', fact:'Belgická vlajka má svislé pruhy na rozdíl od podobné německé, která má vodorovné.', visual:{type:'flag', colors:['#2d2926','#fcd116','#ef3340']}});
   BANK.leh.push({q:'Jaké zvíře skrývá tahle emoji nápověda a jak dlouho je zimní spánek?', a:'Ježek — cca 5–6 měsíců', fact:'Během spánku mu klesne tělesná teplota skoro na teplotu okolí.', visual:{type:'emoji', value:'🦔'}});
   BANK.leh.push({q:'Kterého hrdinu skrývají tahle emoji?', a:'Spider-Man / Pavouk', fact:'Postavu vytvořili Stan Lee a Steve Ditko v roce 1962.', visual:{type:'emoji', value:'🕷️🕸️🧑'}});
+  BANK.leh.push({q:'Kterou zemi reprezentuje tahle vlajka?', a:'Francie', fact:'Francouzská trikolóra vznikla během revoluce v 18. století — spojuje barvy Paříže (modrá, červená) a královskou bílou.', visual:{type:'flag', colors:['#0055a4','#ffffff','#ef4135']}});
+  BANK.leh.push({q:'Který film skrývají tahle emoji?', a:'Pán prstenů', fact:'Filmová trilogie podle knih J. R. R. Tolkiena vznikla na Novém Zélandu a vyhrála dohromady 17 Oscarů.', visual:{type:'emoji', value:'🧙‍♂️💍🌋'}});
+  BANK.str.push({q:'Kterou zemi reprezentuje tahle vlajka?', a:'Německo', fact:'Barvy černá-červená-zlatá pocházejí z uniforem dobrovolníků bojujících proti Napoleonovi.', visual:{type:'flag', vertical:false, colors:['#000000','#dd0000','#ffce00']}});
+  BANK.str.push({q:'Kterého hrdinu skrývají tahle emoji?', a:'Batman', fact:'Postava poprvé vyšla v komiksu v roce 1939 a dodnes patří mezi nejpopulárnější superhrdiny vůbec.', visual:{type:'emoji', value:'🦇🃏🌃'}});
+  BANK.str.push({q:'Jakou stavbu představuje tahle silueta — dominantu Pražského hradu?', a:'Katedrála svatého Víta', fact:'Stavba katedrály trvala s přestávkami skoro 600 let, dokončena byla až ve 20. století.', visual:{type:'svg', markup:'<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><rect x="20" y="120" width="260" height="18" rx="2"/><rect x="34" y="90" width="16" height="48"/><polygon points="34,90 50,90 42,68"/><rect x="118" y="38" width="20" height="100"/><polygon points="118,38 138,38 128,6"/><rect x="152" y="38" width="20" height="100"/><polygon points="152,38 172,38 162,6"/><rect x="250" y="95" width="16" height="43"/><polygon points="250,95 266,95 258,73"/></svg>'}});
+  BANK.tez.push({q:'Kterou zemi reprezentuje tahle vlajka?', a:'Nizozemsko', fact:'Je to jedna z nejstarších trikolór na světě, používaná už od 16. století.', visual:{type:'flag', vertical:false, colors:['#ae1c28','#ffffff','#21468b']}});
+  BANK.tez.push({q:'Který film skrývají tahle emoji?', a:'Ledové království (Frozen)', fact:'Film inspirovala pohádka H. C. Andersena Sněhová královna, i když příběh je nakonec úplně jiný.', visual:{type:'emoji', value:'👸❄️⛄'}});
+  BANK.exp.push({q:'Kterou zemi reprezentuje tahle vlajka? (pozor, je barevně skoro stejná jako sousední Čad)', a:'Rumunsko', fact:'Rumunská a čadská vlajka mají téměř identické barvy i poměr stran — liší se jen nepatrným odstínem modré.', visual:{type:'flag', colors:['#002b7f','#fcd116','#ce1126']}});
 
   // Bonusové kolo "Hádej číslo" — týmy tipují číslo, vyhrává nejbližší odhad.
   // Jen ověřená, stabilní čísla (rekordy, rozměry) — žádné čerstvé roční statistiky,
@@ -523,6 +602,13 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     {q:'Kolik tisíc kilometrů měří dohromady všechny cévy v těle dospělého člověka?', a:100, unit:'tisíc km', fact:'To je víc než dvakrát obvod celé Země.'},
     {q:'Kolik schodů vede od základny po korunu newyorské Sochy svobody?', a:354, unit:'schodů', fact:'Odpovídá to zhruba 22 patrům běžné výškové budovy.'},
     {q:'Kolik let se odhaduje, že trvala stavba Velké pyramidy v Gíze?', a:20, unit:'let', fact:'Na stavbě pracovaly desetitisíce placených dělníků, ne otroci, jak se dřív tradovalo.'},
+    {q:'Kolik kilometrů měří řeka Vltava od pramene po soutok s Labem?', a:430, unit:'km', fact:'Je to nejdelší řeka, která teče celá po území České republiky.'},
+    {q:'Kolik metrů měří na výšku Petřínská rozhledna v Praze?', a:63.5, unit:'m', fact:'Je to zmenšená kopie Eiffelovy věže, postavená po vzoru pařížské výstavy roku 1889.'},
+    {q:'Kolik kilogramů váží v průměru dospělý samec gorily nížinné?', a:170, unit:'kg', fact:'Navzdory své síle jsou gorily převážně mírumilovní býložravci.'},
+    {q:'Kolik pozemských let trvá jeden oběh planety Neptun kolem Slunce?', a:165, unit:'let', fact:'Od objevu Neptunu v roce 1846 oběhl Slunce teprve necelé dva celé okruhy.'},
+    {q:'Kolik metrů na délku měřil podle odhadů největší známý dinosaurus, Argentinosaurus?', a:35, unit:'m', fact:'Patřil mezi obří sauropody a podle odhadů mohl vážit i přes 70 tun.'},
+    {q:'Kdy (přesné datum) byla podepsána americká Deklarace nezávislosti?', inputType:'date', a:Date.UTC(1776,6,4), display:'4. července 1776', fact:'Tento den se v USA dodnes slaví jako hlavní státní svátek.'},
+    {q:'Kdy (přesné datum) došlo k výbuchu reaktoru v jaderné elektrárně Černobyl?', inputType:'date', a:Date.UTC(1986,3,26), display:'26. dubna 1986', fact:'Je to dosud nejhorší jaderná havárie v dějinách lidstva.'},
   ];
 
   // Obyčejné míchání (nová hra pokaždé jinak) i seedované (pro odkaz s konkrétní sadou — stejný seed = stejné otázky pokaždé).
@@ -691,6 +777,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const progress = document.getElementById('progress');
   const qtext = document.getElementById('qtext');
   const visual = document.getElementById('visual');
+  const choices = document.getElementById('choices');
   const answerbox = document.getElementById('answerbox');
   const answertext = document.getElementById('answertext');
   const factbox = document.getElementById('factbox');
@@ -770,6 +857,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     if(v.type === 'flag'){
       const flag = document.createElement('div');
       flag.className = 'flag';
+      flag.style.flexDirection = v.vertical === false ? 'column' : 'row';
       v.colors.forEach(c => {
         const stripe = document.createElement('div');
         stripe.style.background = c;
@@ -781,6 +869,8 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       span.className = 'emoji-visual';
       span.textContent = v.value;
       visual.appendChild(span);
+    } else if(v.type === 'svg'){
+      visual.innerHTML = v.markup;
     }
   }
 
@@ -910,6 +1000,23 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     buildVisual(q.visual);
     answertext.textContent = isGuess ? (q.display || (q.a.toLocaleString('cs-CZ') + ' ' + q.unit)) : q.a;
     facttext.textContent = q.fact || '';
+
+    if(q.type === 'choice' && q.options){
+      choices.hidden = false;
+      choices.innerHTML = '';
+      const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+      q.options.forEach((opt, i) => {
+        const row = document.createElement('div');
+        row.className = 'opt' + (state.revealed && i === q.correctIndex ? ' correct' : '');
+        const letter = document.createElement('span'); letter.className = 'letter'; letter.textContent = letters[i] + ')';
+        const txt = document.createElement('span'); txt.textContent = opt;
+        row.appendChild(letter); row.appendChild(txt);
+        choices.appendChild(row);
+      });
+    } else {
+      choices.hidden = true;
+      choices.innerHTML = '';
+    }
 
     guessbox.classList.toggle('show', isGuess && !state.revealed);
     revealBtn.hidden = isGuess;
