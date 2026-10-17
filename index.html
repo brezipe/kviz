@@ -223,6 +223,31 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       <div id="previewList"></div>
     </div>
   </details>
+
+  <details class="card admin-card">
+    <summary>🎵 Bonus — Hádej písničku (zkomolená)</summary>
+    <p class="hint" style="margin-top:10px;">Vyber hudební soubor přímo ze svého telefonu/počítače — nic se nikam nenahrává, hraje se jen lokálně v prohlížeči. Hraj týmům zkomolenou verzi, pak přepni na normální a odhal název.</p>
+
+    <div class="field">
+      <label for="songFile">Hudební soubor</label>
+      <input type="file" id="songFile" accept="audio/*">
+    </div>
+
+    <fieldset class="tierpick">
+      <legend>Zkomolení</legend>
+      <label><input type="radio" name="songEffect" value="normal" checked> Normálně</label>
+      <label><input type="radio" name="songEffect" value="slow"> 🐌 Zpomaleno</label>
+      <label><input type="radio" name="songEffect" value="fast"> 🐇 Zrychleno</label>
+      <label><input type="radio" name="songEffect" value="muffled"> 🧱 Přes zeď (tlumeno)</label>
+      <label><input type="radio" name="songEffect" value="reversed"> 🔄 Pozpátku</label>
+    </fieldset>
+
+    <audio id="songAudio" controls style="width:100%; margin-top:12px;" hidden></audio>
+    <div class="btnrow" id="songReversedRow" hidden>
+      <button class="primary" id="songReversedPlay" type="button">▶️ Přehrát pozpátku</button>
+      <button class="ghost" id="songReversedStop" type="button">⏹ Stop</button>
+    </div>
+  </details>
 </div>
 
 <div class="scorebar" id="scorebar" hidden></div>
@@ -733,6 +758,108 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const slugResult = document.getElementById('slugResult');
   const slugUrl = document.getElementById('slugUrl');
   const slugCopy = document.getElementById('slugCopy');
+  const songFile = document.getElementById('songFile');
+  const songAudio = document.getElementById('songAudio');
+  const songReversedRow = document.getElementById('songReversedRow');
+  const songReversedPlay = document.getElementById('songReversedPlay');
+  const songReversedStop = document.getElementById('songReversedStop');
+
+  // ── Bonus: zkomolená písnička — čistě lokálně v prohlížeči, nic se nenahrává ──
+  function wireSongBonus(){
+    let audioCtx = null, filterNode = null, mediaSource = null;
+    let reversedBuffer = null, reversedSourceNode = null, decoding = false;
+
+    function ensureGraph(){
+      if(audioCtx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      audioCtx = new AC();
+      mediaSource = audioCtx.createMediaElementSource(songAudio);
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = 'lowpass';
+      filterNode.frequency.value = 20000;
+      mediaSource.connect(filterNode);
+      filterNode.connect(audioCtx.destination);
+    }
+
+    function startDecodeForReverse(file){
+      decoding = true;
+      songReversedPlay.textContent = '⏳ Zpracovávám...';
+      songReversedPlay.disabled = true;
+      ensureGraph();
+      const reader = new FileReader();
+      reader.onload = () => {
+        if(!audioCtx) return;
+        audioCtx.decodeAudioData(reader.result.slice(0)).then(buffer => {
+          const rev = audioCtx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate);
+          for(let ch = 0; ch < buffer.numberOfChannels; ch++){
+            const data = buffer.getChannelData(ch).slice();
+            Array.prototype.reverse.call(data);
+            rev.copyToChannel(data, ch);
+          }
+          reversedBuffer = rev;
+          decoding = false;
+          songReversedPlay.textContent = '▶️ Přehrát pozpátku';
+          songReversedPlay.disabled = false;
+        }).catch(() => {
+          decoding = false;
+          songReversedPlay.textContent = '⚠️ Nejde zpracovat tenhle formát';
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    songFile.addEventListener('change', () => {
+      const file = songFile.files[0];
+      if(!file) return;
+      songAudio.src = URL.createObjectURL(file);
+      songAudio.hidden = false;
+      reversedBuffer = null;
+      startDecodeForReverse(file);
+      applyEffect();
+    });
+
+    function stopReversed(){
+      if(reversedSourceNode){
+        try{ reversedSourceNode.stop(); }catch(e){}
+        reversedSourceNode = null;
+      }
+    }
+
+    function applyEffect(){
+      const mode = (document.querySelector('input[name="songEffect"]:checked') || {}).value || 'normal';
+      stopReversed();
+      if(mode === 'reversed'){
+        songAudio.pause();
+        songAudio.hidden = true;
+        songReversedRow.hidden = false;
+        return;
+      }
+      songReversedRow.hidden = true;
+      songAudio.hidden = false;
+      songAudio.playbackRate = mode === 'slow' ? 0.7 : (mode === 'fast' ? 1.4 : 1);
+      if(mode === 'muffled'){
+        ensureGraph();
+        if(filterNode) filterNode.frequency.value = 500;
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      } else if(filterNode){
+        filterNode.frequency.value = 20000;
+      }
+    }
+
+    document.querySelectorAll('input[name="songEffect"]').forEach(r => r.addEventListener('change', applyEffect));
+
+    songReversedPlay.addEventListener('click', () => {
+      if(decoding || !reversedBuffer || !audioCtx) return;
+      stopReversed();
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      reversedSourceNode = audioCtx.createBufferSource();
+      reversedSourceNode.buffer = reversedBuffer;
+      reversedSourceNode.connect(audioCtx.destination);
+      reversedSourceNode.start(0);
+    });
+    songReversedStop.addEventListener('click', stopReversed);
+  }
   const preview = document.getElementById('preview');
   const previewSummary = document.getElementById('previewSummary');
   const previewList = document.getElementById('previewList');
@@ -1185,6 +1312,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     if(state.teams.length >= 6) addTeamBtn.disabled = true;
     qcountInput.value = state.qcount || 20;
     wireAdminPanel();
+    wireSongBonus();
     applySlugUI();
 
     if(state.started && state.questions.length && state.current < state.questions.length){
