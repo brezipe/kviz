@@ -140,6 +140,7 @@
     <div class="topline">
       <span class="badge" id="catBadge">Kategorie</span>
       <span class="progress mono" id="progress">Otázka 1 / 18</span>
+      <button class="ghost small" id="backToSetupBtn" type="button">← Nastavení</button>
       <button class="ghost small" id="restartGameBtn" type="button">↺ Nová sada</button>
       <span class="confirm-inline" id="restartGameConfirm" hidden>
         <span class="confirm-note">Smaže všechny dosavadní body.</span>
@@ -183,6 +184,7 @@
     <div class="podium" id="podium"></div>
     <div class="btnrow">
       <button class="primary" id="restartBtn" type="button">Hrát znovu (nová sada otázek)</button>
+      <button class="ghost" id="backToSetupBtn2" type="button">← Zpět na nastavení</button>
     </div>
   </div>
 </div>
@@ -436,6 +438,8 @@
   const podium = document.getElementById('podium');
   const restartBtn = document.getElementById('restartBtn');
   const restartGameBtn = document.getElementById('restartGameBtn');
+  const backToSetupBtn = document.getElementById('backToSetupBtn');
+  const backToSetupBtn2 = document.getElementById('backToSetupBtn2');
   const restartGameConfirm = document.getElementById('restartGameConfirm');
   const restartGameYes = document.getElementById('restartGameYes');
   const restartGameCancel = document.getElementById('restartGameCancel');
@@ -748,9 +752,41 @@
 
   restartBtn.addEventListener('click', doRestart);
 
+  function backToSetup(btn){
+    if(!confirmOnce(btn)) return;
+    state.started = false;
+    save();
+    gameEl.hidden = true;
+    resultsEl.hidden = true;
+    scorebar.hidden = true;
+    historyWrap.hidden = true;
+    setupEl.hidden = false;
+    renderTeamInputs();
+  }
+
+  // stejný "klikni podruhé pro potvrzení" vzor jako u Nové sady, ale obecný pro libovolné tlačítko
+  function confirmOnce(btn){
+    if(btn.dataset.confirming === '1'){
+      btn.dataset.confirming = '';
+      btn.textContent = btn.dataset.label;
+      return true;
+    }
+    btn.dataset.confirming = '1';
+    btn.dataset.label = btn.dataset.label || btn.textContent;
+    btn.textContent = 'Opravdu? Klikni znovu';
+    setTimeout(() => {
+      if(btn.dataset.confirming === '1'){
+        btn.dataset.confirming = '';
+        btn.textContent = btn.dataset.label;
+      }
+    }, 3000);
+    return false;
+  }
+
+  backToSetupBtn.addEventListener('click', () => backToSetup(backToSetupBtn));
+  backToSetupBtn2.addEventListener('click', () => backToSetup(backToSetupBtn2));
+
   restartGameBtn.addEventListener('click', () => {
-    const hasProgress = state.scores.some(s => s > 0) || state.current > 0;
-    if(!hasProgress){ doRestart(); return; }
     restartGameBtn.hidden = true;
     restartGameConfirm.hidden = false;
   });
