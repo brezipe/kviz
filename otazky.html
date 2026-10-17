@@ -60,6 +60,18 @@
     <p class="counts" id="counts"></p>
   </div>
 
+  <div class="card" id="selectBar">
+    <div class="btnrow" style="align-items:center;">
+      <span class="hint" id="selCount" style="margin:0;">Vybráno: 0 otázek</span>
+      <button class="primary small" id="buildSelectedBtn" type="button" disabled>Vytvořit odkaz na kvíz z vybraných →</button>
+      <button class="small" id="clearSelectedBtn" type="button">Zrušit výběr</button>
+    </div>
+    <div id="selectedSlugResult" hidden style="margin-top:10px;">
+      <input type="text" id="selectedSlugUrl" readonly style="width:100%;">
+      <button class="small" id="selectedSlugCopy" type="button" style="margin-top:6px;">Kopírovat</button>
+    </div>
+  </div>
+
   <div id="sections"></div>
 </div>
 
@@ -81,6 +93,38 @@
   const tierFilter = document.getElementById('tierFilter');
   const counts = document.getElementById('counts');
   const sections = document.getElementById('sections');
+  const selCount = document.getElementById('selCount');
+  const buildSelectedBtn = document.getElementById('buildSelectedBtn');
+  const clearSelectedBtn = document.getElementById('clearSelectedBtn');
+  const selectedSlugResult = document.getElementById('selectedSlugResult');
+  const selectedSlugUrl = document.getElementById('selectedSlugUrl');
+  const selectedSlugCopy = document.getElementById('selectedSlugCopy');
+
+  const selectedIds = new Set();
+
+  function updateSelCount(){
+    selCount.textContent = 'Vybráno: ' + selectedIds.size + ' otázek';
+    buildSelectedBtn.disabled = selectedIds.size === 0;
+  }
+
+  buildSelectedBtn.addEventListener('click', () => {
+    const chosen = ALL.filter(q => selectedIds.has(q._id));
+    selectedSlugUrl.value = buildSlugUrl(chosen);
+    selectedSlugResult.hidden = false;
+    selectedSlugUrl.select();
+  });
+  selectedSlugCopy.addEventListener('click', () => {
+    selectedSlugUrl.select();
+    navigator.clipboard && navigator.clipboard.writeText(selectedSlugUrl.value).catch(() => {});
+    selectedSlugCopy.textContent = 'Zkopírováno!';
+    setTimeout(() => { selectedSlugCopy.textContent = 'Kopírovat'; }, 1500);
+  });
+  clearSelectedBtn.addEventListener('click', () => {
+    selectedIds.clear();
+    updateSelCount();
+    selectedSlugResult.hidden = true;
+    renderAll();
+  });
 
   function unlock(){
     lockWrap.hidden = true;
@@ -147,7 +191,15 @@
       items.forEach((q, i) => {
         const row = document.createElement('div');
         row.className = 'preview-row';
-        const head = document.createElement('div'); head.className = 'phead';
+        const head = document.createElement('div'); head.className = 'phead'; head.style.justifyContent = 'flex-start';
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.checked = selectedIds.has(q._id);
+        check.addEventListener('change', () => {
+          if(check.checked) selectedIds.add(q._id); else selectedIds.delete(q._id);
+          updateSelCount();
+        });
+        head.appendChild(check);
         const badge = document.createElement('span'); badge.className = 'pbadge'; badge.textContent = (i + 1) + '.' + (q.type === 'choice' ? ' ABCD' : (q.visual ? ' 🖼️' : ''));
         head.appendChild(badge);
         row.appendChild(head);
