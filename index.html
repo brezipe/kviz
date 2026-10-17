@@ -89,6 +89,15 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 .navrow{display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:10px; flex-wrap:wrap;}
 .confirm-inline{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
 .confirm-note{color:var(--muted); font-size:.8rem;}
+.guessbox{display:none; margin-top:16px;}
+.guessbox.show{display:block;}
+.guessbox .hint{color:var(--muted); font-size:.85rem;}
+.guesslist{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
+.guess-row{display:flex; align-items:center; gap:10px;}
+.guess-row .gnm{flex:1; font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.guess-row input{width:150px; flex:none;}
+.guess-row.closest{outline:2px solid var(--accent); border-radius:10px;}
+.guess-row .tag{font-size:.78rem; color:var(--accent); font-weight:700; white-space:nowrap;}
 
 .podium{display:flex; flex-direction:column; gap:10px; margin-top:16px;}
 .prow{display:flex; align-items:center; gap:14px; background:var(--surface2); border-radius:12px; padding:14px 16px;}
@@ -153,6 +162,12 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     <p class="qtext" id="qtext"></p>
     <div class="visual" id="visual" hidden></div>
 
+    <div class="guessbox" id="guessbox" hidden>
+      <p class="hint" style="margin:0 0 8px;">Admin zadá odhad každého týmu (řekli ho nahlas / mají na papíře):</p>
+      <div class="guesslist" id="guesslist"></div>
+      <button class="primary small" id="evalBtn" type="button">Vyhodnotit, kdo byl nejblíž →</button>
+    </div>
+
     <div class="answerbox" id="answerbox">
       <div class="lbl">Správná odpověď</div>
       <p id="answertext"></p>
@@ -192,14 +207,10 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const BANK = {
     leh: [
       {q:'Kolik krajů má Česká republika?', a:'14', fact:'Dnešní krajské uspořádání platí od roku 2000, kdy nahradilo starší systém okresů.'},
-      {q:'Jaký je chemický vzorec vody?', a:'H₂O', fact:'Jedna molekula vody se skládá ze dvou atomů vodíku a jednoho atomu kyslíku.'},
-      {q:'Kolik měsíců v roce má 31 dní?', a:'7', fact:'Leden, březen, květen, červenec, srpen, říjen a prosinec.'},
       {q:'Jak se jmenuje měna používaná ve Velké Británii?', a:'Libra šterlinků', fact:'Je to nejstarší měna světa, která je stále v oběhu — používá se už přes 1200 let.'},
-      {q:'Kolik nohou má pavouk?', a:'8', fact:'Proto patří mezi pavoukovce, ne mezi hmyz, který má nohou jen 6.'},
       {q:'Jak se jmenuje hlavní město Austrálie? (není to Sydney!)', a:'Canberra', fact:'Vzniklo uměle jako kompromisní hlavní město mezi rivaly Sydney a Melbourne.'},
       {q:'Který orgán lidského těla je svou plochou největší?', a:'Kůže', fact:'U dospělého člověka má plochu přibližně 2 metry čtvereční.'},
       {q:'Kolik planet má naše sluneční soustava?', a:'8', fact:'Pluto bylo v roce 2006 překlasifikováno na trpasličí planetu.'},
-      {q:'Která řeka protéká Prahou?', a:'Vltava', fact:'Je nejdelší řekou, která teče celá po českém území.'},
       {q:'Jak se jmenuje nejvyšší hora světa?', a:'Mount Everest', fact:'Měří 8 849 m a díky pohybu tektonických desek stále mírně roste.'},
       {q:'Kolik států sousedí s Českou republikou?', a:'4 — Německo, Polsko, Slovensko, Rakousko', fact:'Česko nemá přímý přístup k moři, je jedním z mála vnitrozemských států Evropy.'},
       {q:'V jakém roce skončila druhá světová válka?', a:'1945', fact:'V Evropě 8. května, v Asii po kapitulaci Japonska v září téhož roku.'},
@@ -207,39 +218,43 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
       {q:'Jak se jmenovala první žena ve vesmíru?', a:'Valentina Těreškovová', fact:'Letěla v roce 1963 na sovětské lodi Vostok 6.'},
       {q:'Které zvíře je podle hmotnosti největší na světě?', a:'Plejtvák obrovský (modrá velryba)', fact:'Může vážit přes 150 tun, tedy víc než 30 dospělých slonů dohromady.'},
       {q:'Kolik srdcí má chobotnice?', a:'3', fact:'Dvě srdce pumpují krev přes žábry, jedno pak zásobuje zbytek těla.'},
-      {q:'Kolik celovečerních filmů má filmová série Harry Potter?', a:'8', fact:'Natočeno bylo podle 7 knih — poslední díl rozdělili na dvě části.'},
-      {q:'Kdo namaloval obraz Mona Lisa?', a:'Leonardo da Vinci', fact:'Obraz dnes visí v pařížském Louvru a je pojištěn na stovky milionů dolarů.'},
-      {q:'Jak se jmenuje naše přirozená družice Země?', a:'Měsíc', fact:'Je to jediné vesmírné těleso mimo Zemi, na které kdy vkročil člověk.'},
-      {q:'Kolik barev má duha?', a:'7', fact:'Červená, oranžová, žlutá, zelená, modrá, indigo a fialová.'},
-      {q:'Jak se jmenuje hlavní město Japonska?', a:'Tokio', fact:'Jeho metropolitní oblast je nejlidnatější na světě — žije tam přes 37 milionů lidí.'},
       {q:'Který savec vydrží nejdéle bez jídla a pití?', a:'Velbloud', fact:'Díky tukovým zásobám v hrbu vydrží i víc než týden bez vody.'},
-      {q:'V jaké zemi se nachází Eiffelova věž?', a:'Francie', fact:'Postavena byla v roce 1889 pro světovou výstavu v Paříži a měla stát jen dočasně.'},
       {q:'Kolik zubů má dospělý člověk včetně moudráků?', a:'32', fact:'Bez moudráků je to 28 — ty bývají poslední, které prorazí, často až po dvacítce.'},
       {q:'Jak se jmenuje největší oceán na světě?', a:'Tichý oceán', fact:'Pokrývá víc než třetinu celého povrchu planety.'},
       {q:'Který kov je za pokojové teploty tekutý?', a:'Rtuť', fact:'Dříve se běžně používala v teploměrech, dnes kvůli toxicitě méně.'},
-      {q:'Jak se jmenuje pes z pohádek o Mickey Mousovi?', a:'Pluto', fact:'Na rozdíl od Goofyho, který je taky pes, Pluto neumí mluvit.'},
       {q:'Jaký je nejrychlejší pozemský savec?', a:'Gepard', fact:'Dokáže zrychlit na víc než 100 km/h za pouhé tři sekundy.'},
       {q:'Kolik kostí má dospělý člověk?', a:'206', fact:'Novorozenec jich má přes 270 — řada kostí v průběhu růstu srůstá dohromady.'},
-      {q:'Jak se jmenuje hlavní město Itálie?', a:'Řím', fact:'Přímo uvnitř Říma leží samostatný stát Vatikán, nejmenší na světě.'},
-      {q:'Kolik hráčů má na hřišti fotbalový tým?', a:'11', fact:'Včetně brankáře — pokud je vyloučen hráč, tým pokračuje s méně lidmi.'},
-      {q:'Jak se nazývá "král zvířat"?', a:'Lev', fact:'Lvi žijí ve smečkách zvaných pýchy, na rozdíl od většiny ostatních kočkovitých šelem.'},
       {q:'Který je nejmenší stát světa?', a:'Vatikán', fact:'Jeho rozloha je necelých 0,5 kilometru čtverečního.'},
-      {q:'Kolik minut má hodina?', a:'60', fact:'A stejně tak má minuta 60 vteřin.'},
       {q:'Jak se jmenuje nejhlubší jezero na světě, které leží v Rusku?', a:'Bajkal', fact:'Obsahuje přibližně 20 % veškeré sladké vody na povrchu Země.'},
       {q:'Který plyn tvoří největší část zemské atmosféry?', a:'Dusík (asi 78 %)', fact:'Kyslíku je v atmosféře necelých 21 %, zbytek tvoří další plyny.'},
       {q:'Jak se jmenuje vesmírná loď, která jako první přistála s lidmi na Měsíci?', a:'Apollo 11', fact:'K přistání došlo 20. července 1969, posádku tvořili Armstrong, Aldrin a Collins.'},
-      {q:'Kolik stran má šestiúhelník?', a:'6', fact:'Tento tvar mají třeba plástve, které staví včely — je nejúspornější na materiál.'},
-      {q:'Jaké je hlavní město Španělska?', a:'Madrid', fact:'Leží v nadmořské výšce přes 600 metrů, patří tak mezi nejvýše položená hlavní města Evropy.'},
-      {q:'Který pták neumí létat, ale skvěle plave?', a:'Tučňák', fact:'Nejtěžší druh, tučňák císařský, váží i přes 40 kilogramů.'},
-      {q:'Kolik gramů je v jednom kilogramu?', a:'1000', fact:'Kilogram je základní jednotkou hmotnosti v soustavě SI.'},
-      {q:'Jak se jmenuje bájný tvor, napůl kůň a napůl člověk?', a:'Kentaur', fact:'Pochází z řecké mytologie, proslulým kentaurem je mudrc Cheirón.'},
       {q:'Jak se jmenuje nejdelší řeka světa?', a:'Nil (podle většiny zdrojů)', fact:'Měří přes 6 650 km, i když některé novější studie dávají přednost Amazonce.'},
-      {q:'Kolik rohů má fotbalové hřiště?', a:'4', fact:'V každém z nich je zapíchnutý praporek pro rozlišení hranice hřiště.'},
       {q:'Jaký je oficiální jazyk Brazílie?', a:'Portugalština', fact:'Brazílie je jediná portugalsky mluvící země celé Jižní Ameriky.'},
-      {q:'Jak se jmenuje sob s červeným nosem, co vede Santovy sáně?', a:'Rudolf', fact:'Postavu vymysleli pro reklamní knížku obchodního domu v roce 1939.'},
       {q:'Kolik písmen má česká abeceda?', a:'42', fact:'Počítáme-li i písmena s háčky a čárkami jako samostatná písmena.'},
-      {q:'Jak se jmenuje proces tání ledu na vodu?', a:'Tání (fázová přeměna)', fact:'Led taje při 0 °C za normálního atmosférického tlaku.'},
-      {q:'Který smysl vnímáme nosem?', a:'Čich', fact:'Čich je úzce propojený s chutí — proto při rýmě méně cítíme chutě jídla.'},
+      {q:'Ve kterém roce vznikla samostatná Česká republika rozdělením Československa?', a:'1993', fact:'Rozpad proběhl pokojně, přezdívá se mu "sametový rozvod".'},
+      {q:'Který kontinent je co do rozlohy na Zemi největší?', a:'Asie', fact:'Pokrývá téměř třetinu veškeré souše planety.'},
+      {q:'Jaká je úřední měna Japonska?', a:'Jen', fact:'Japonský jen patří mezi tři nejobchodovanější měny světa.'},
+      {q:'Který je největší ostrov na světě? (Austrálie se počítá jako kontinent)', a:'Grónsko', fact:'Patří pod Dánsko, i když geograficky leží v Severní Americe.'},
+      {q:'Který stát Evropské unie má nejvíc obyvatel?', a:'Německo', fact:'Žije v něm přes 83 milionů lidí.'},
+      {q:'Na kterém souostroví pozoroval Charles Darwin pěnkavy, jež ho inspirovaly k evoluční teorii?', a:'Galapágy', fact:'Leží v Tichém oceánu a patří Ekvádoru.'},
+      {q:'Který je největší žijící plaz na světě?', a:'Krokodýl mořský (hřebenatý)', fact:'Může měřit přes 6 metrů a vážit přes tunu.'},
+      {q:'Jak se jmenuje proces, při kterém se housenka promění v motýla?', a:'Metamorfóza', fact:'Probíhá uvnitř kukly, kde se tělo housenky doslova rozpustí a znovu poskládá.'},
+      {q:'Který orgán v lidském těle produkuje inzulín?', a:'Slinivka břišní (pankreas)', fact:'Při jejím selhání vzniká cukrovka prvního typu.'},
+      {q:'Jak se jmenuje nejvyšší vrchol Afriky?', a:'Kilimandžáro', fact:'Měří 5 895 metrů a leží v Tanzanii, přestože je blízko rovníku, na vrcholu bývá sníh.'},
+      {q:'Který je nejmenší kontinent na světě?', a:'Austrálie', fact:'Je zároveň jediný kontinent tvořený jedinou zemí.'},
+      {q:'Kolik komor má žaludek krávy?', a:'4', fact:'Umožňují jí trávit těžko stravitelnou celulózu z trávy.'},
+      {q:'Který panovnický rod vládl Rakousku-Uhersku až do roku 1918?', a:'Habsburkové', fact:'Posledním vládnoucím císařem byl Karel I.'},
+      {q:'Jak se jmenuje nejdelší kost v lidském těle?', a:'Stehenní kost (femur)', fact:'Dokáže unést mnohonásobně vyšší zátěž, než je hmotnost celého těla.'},
+      {q:'V jaké zemi leží starobylý chrámový komplex Angkor Wat?', a:'Kambodža', fact:'Je to největší náboženský komplex na světě.'},
+      {q:'Který smysl je u psů mnohonásobně citlivější než u člověka?', a:'Čich', fact:'Odhaduje se, že psí čich je 10 000 až 100 000krát citlivější než lidský.'},
+      {q:'Jak se jmenuje hlavní město Jižní Koreje?', a:'Soul', fact:'V jeho metropolitní oblasti žije přes 25 milionů lidí.'},
+      {q:'Který chemický prvek je nejlehčí ze všech?', a:'Vodík', fact:'Má atomové číslo 1 a tvoří většinu hmoty celého vesmíru.'},
+      {q:'Který savec snáší vejce místo toho, aby rodil živá mláďata?', a:'Ptakopysk', fact:'Žije v Austrálii a patří mezi jediné dva vejcorodé savce spolu s ježurou.'},
+      {q:'Který je nejstudenější kontinent na Zemi?', a:'Antarktida', fact:'Byla tam naměřena teplota až -89 °C, nejnižší kdy zaznamenaná na Zemi.'},
+      {q:'Jak se jmenuje proces čištění krve používaný u pacientů se selháním ledvin?', a:'Dialýza', fact:'Nahrazuje funkci ledvin uměle, buď mimo tělo, nebo přímo v břišní dutině.'},
+      {q:'Který pták je nejrychlejší na světě v řízeném střemhlavém letu?', a:'Sokol stěhovavý', fact:'Při útoku na kořist dosahuje rychlosti přes 300 km/h.'},
+      {q:'Který jazyk má na světě nejvíc rodilých mluvčích?', a:'Mandarínská čínština', fact:'Mluví jí rodilě přes 900 milionů lidí, hlavně v Číně.'},
+      {q:'Jak se jmenuje nejvyšší aktivní sopka v Evropě?', a:'Etna na Sicílii', fact:'Je zároveň jednou z nejaktivnějších sopek na světě.'},
     ],
     str: [
       {q:'Kolik časových pásem má Rusko?', a:'11', fact:'Je to nejvíc časových pásem ze všech zemí světa.'},
@@ -407,6 +422,7 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   // Jen ověřená, stabilní čísla (rekordy, rozměry) — žádné čerstvé roční statistiky,
   // u kterých by hrozilo, že bychom si vymysleli nepřesné číslo.
   const GUESS_BANK = [
+    {q:'Kolik obcí (měst, městysů a vesnic dohromady) má Česká republika?', a:6254, unit:'obcí', fact:'Česko má na svou rozlohu jedno z nejhustších sídelních uspořádání v Evropě — hodně obcí má jen pár desítek obyvatel.'},
     {q:'Kolik schodů vede od základny až na vrchol Eiffelovy věže?', a:1665, unit:'schodů', fact:'Výtahem to většina turistů ani nepozná — po schodech se běžně smí jen do druhého patra.'},
     {q:'Jak dlouhá je čínská Velká zeď i se všemi odbočkami, v kilometrech?', a:21196, unit:'km', fact:'Číslo zahrnuje i boční zdi a přírodní překážky, podle oficiálního čínského průzkumu z roku 2012.'},
     {q:'Kolik schodů vede na vrchol Petřínské rozhledny v Praze?', a:299, unit:'schodů', fact:'Rozhledna je zmenšenou kopií Eiffelovky, vysoká zhruba pětinu originálu.'},
@@ -486,6 +502,9 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
   const revealBtn = document.getElementById('revealBtn');
   const nextBtn = document.getElementById('nextBtn');
   const award = document.getElementById('award');
+  const guessbox = document.getElementById('guessbox');
+  const guesslist = document.getElementById('guesslist');
+  const evalBtn = document.getElementById('evalBtn');
   const podium = document.getElementById('podium');
   const restartBtn = document.getElementById('restartBtn');
   const restartGameBtn = document.getElementById('restartGameBtn');
@@ -586,25 +605,82 @@ button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
     });
   }
 
+  function buildGuessInputs(){
+    guesslist.innerHTML = '';
+    state.teams.forEach((name, i) => {
+      const row = document.createElement('div');
+      row.className = 'guess-row';
+      row.id = 'guess-row-' + i;
+      const nm = document.createElement('span'); nm.className = 'gnm'; nm.textContent = name || ('Tým ' + (i+1));
+      const input = document.createElement('input');
+      input.type = 'number'; input.id = 'guess-input-' + i; input.placeholder = 'odhad';
+      row.appendChild(nm); row.appendChild(input);
+      guesslist.appendChild(row);
+    });
+  }
+
+  function evaluateGuesses(){
+    const q = state.questions[state.current];
+    const diffs = state.teams.map((_, i) => {
+      const el = document.getElementById('guess-input-' + i);
+      const val = el ? parseFloat(el.value) : NaN;
+      return isNaN(val) ? Infinity : Math.abs(val - q.a);
+    });
+    const minDiff = Math.min(...diffs);
+    if(minDiff === Infinity) return; // nikdo nic nezadal
+    diffs.forEach((d, i) => {
+      const row = document.getElementById('guess-row-' + i);
+      const input = document.getElementById('guess-input-' + i);
+      if(input) input.disabled = true;
+      if(d === minDiff){
+        if(row) row.classList.add('closest');
+        const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '🏆 Nejblíž';
+        if(row) row.appendChild(tag);
+        state.scores[i] = (state.scores[i] || 0) + 1;
+      }
+    });
+    evalBtn.disabled = true;
+    state.revealed = true;
+    save();
+    renderScorebar();
+    answerbox.classList.add('show');
+    factbox.classList.toggle('show', !!q.fact);
+    nextBtn.disabled = false;
+    nextBtn.textContent = state.current === state.questions.length - 1 ? 'Zobrazit výsledky →' : 'Další otázka →';
+  }
+
+  evalBtn.addEventListener('click', evaluateGuesses);
+
   function renderQuestion(){
     restartGameConfirm.hidden = true;
     restartGameBtn.hidden = false;
     const q = state.questions[state.current];
+    const isGuess = q.type === 'guess';
     catBadge.textContent = q.cat;
     catBadge.className = 'badge ' + (TIER_CSS[q.tier] || '');
     progress.textContent = 'Otázka ' + (state.current + 1) + ' / ' + state.questions.length;
     qtext.textContent = q.q;
     buildVisual(q.visual);
-    answertext.textContent = q.type === 'guess'
-      ? q.a.toLocaleString('cs-CZ') + ' ' + q.unit
-      : q.a;
+    answertext.textContent = isGuess ? (q.a.toLocaleString('cs-CZ') + ' ' + q.unit) : q.a;
     facttext.textContent = q.fact || '';
-    answerbox.classList.toggle('show', state.revealed);
-    factbox.classList.toggle('show', state.revealed && !!q.fact);
-    revealBtn.textContent = state.revealed ? 'Skrýt odpověď' : 'Zobrazit odpověď';
-    nextBtn.disabled = !state.revealed;
+
+    guessbox.classList.toggle('show', isGuess && !state.revealed);
+    revealBtn.hidden = isGuess;
+    award.hidden = isGuess || !state.revealed;
+    if(isGuess){
+      buildGuessInputs();
+      evalBtn.disabled = false;
+      answerbox.classList.toggle('show', state.revealed);
+      factbox.classList.toggle('show', state.revealed && !!q.fact);
+      nextBtn.disabled = !state.revealed;
+    } else {
+      answerbox.classList.toggle('show', state.revealed);
+      factbox.classList.toggle('show', state.revealed && !!q.fact);
+      revealBtn.textContent = state.revealed ? 'Skrýt odpověď' : 'Zobrazit odpověď';
+      nextBtn.disabled = !state.revealed;
+      renderAward();
+    }
     nextBtn.textContent = state.current === state.questions.length - 1 ? 'Zobrazit výsledky →' : 'Další otázka →';
-    renderAward();
   }
 
   revealBtn.addEventListener('click', () => {
