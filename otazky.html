@@ -109,7 +109,9 @@
 
   buildSelectedBtn.addEventListener('click', () => {
     const chosen = ALL.filter(q => selectedIds.has(q._id));
-    selectedSlugUrl.value = buildSlugUrl(chosen);
+    const url = new URL('index.html', location.href);
+    url.searchParams.set('id', chosen.map(q => q._id).join('.'));
+    selectedSlugUrl.value = url.toString();
     selectedSlugResult.hidden = false;
     selectedSlugUrl.select();
   });
